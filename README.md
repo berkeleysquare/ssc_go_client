@@ -13,14 +13,14 @@ including a full-cycle verification.
 - Create Migrate project; run mow
 - Wait for file to be placed in cache
 - Wait for file to be placed on tape
-- Dispay tape location (id and barcode)
+- Display tape location (id and barcode)
 - Create Restore project; run now
 - Wait for restored file
 - Generate checksum on restored file
 - Compare checksums on source and restored file.
 
 ## Operation
-Unpack the executable onto a mahine with network access to the StorCycle server.
+Unpack the executable onto a machine with network access to the StorCycle server.
 
 On Windows, A directory under C:\StorCycle is recommended, e.g., C:\StorCycle\verify
 
