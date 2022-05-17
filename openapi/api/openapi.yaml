@@ -1,0 +1,2797 @@
+openapi: 3.0.1
+info:
+  contact:
+    email: developer@spectralogic.com
+    name: Spectra Logic Corporation
+    url: http://www.spectralogic.com
+  description: StorCycle® REST API Copyright © 2020 Spectra Logic Corporation
+  license:
+    name: Apache License, Version 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  title: Spectra Logic Corporation Software
+  version: "0.1"
+  x-logo:
+    url: /app/spectra_logo.png
+    backgroundColor: '#FFFFFF'
+externalDocs:
+  description: API Documentation
+  url: https://developer.spectralogic.com
+servers:
+- description: Production server
+  url: https://localhost/openapi
+- description: Test server
+  url: http://localhost:8080/openapi
+tags:
+- description: Authenticates user access and returns a token used to authenticate
+    other API commands.
+  name: Authentication
+- description: API's to retrieve static system information.
+  name: Informational
+- description: Storage APIs to configure source and target storage endpoints.
+  name: Storage
+- description: Project APIs to manage scans, archives and restores.
+  name: Project
+paths:
+  /enums:
+    get:
+      operationId: dumpEnumsToResponse
+      responses:
+        "200":
+          content: {}
+          description: OK
+      summary: List server enumeration names and values.
+      tags:
+      - Informational
+  /tokens:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api.Credentials'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.Token'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Failed to process request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Cannot login due to invalid username or password
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Cannot validate login credentials
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.Token'
+          description: OK
+      summary: Authenticate and authorize user access.
+      tags:
+      - Authentication
+      x-codegen-request-body-name: body
+  /storage-locations/:
+    get:
+      operationId: listStorageLocations
+      parameters:
+      - description: Number of storage locations to skip before returning subsequent
+          results.
+        explode: true
+        in: query
+        name: skip
+        required: false
+        schema:
+          default: 0
+          format: int64
+          type: integer
+        style: form
+      - description: Maximum number of storage locations to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 500
+          format: int64
+          type: integer
+        style: form
+      - description: Whether to include storage locations that have been deactivated.
+        explode: true
+        in: query
+        name: includeAll
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      - description: 'Specify which item to sort by. Default is to sort by created
+          in descending order. Options: created|name|locationType|isTarget|path'
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: 'Specify sorting by project name as either ascending or descending.
+          Default ascending. Options: ASC|DESC'
+        explode: true
+        in: query
+        name: sortType
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.StorageLocationPaginator'
+          description: StorageLocations successfully retrieved
+        "400":
+          content: {}
+          description: Numeric parameter values are not valid integers.
+        "500":
+          content: {}
+          description: The search provider has been prematurely closed.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.StorageLocationPaginator'
+          description: StorageLocations successfully retrieved
+      security:
+      - bearerAuth: []
+      summary: List all storage locations.
+      tags:
+      - Storage
+  /storage-locations/{storageLocationName}:
+    get:
+      operationId: getStorageLocation
+      parameters:
+      - description: Name of storage location to retrieve
+        explode: false
+        in: path
+        name: storageLocationName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.storageLocation'
+          description: StorageLocation successfully retrieved
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: StorageLocation not found
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.storageLocation'
+          description: Storagelocation successfully retrieved
+      security:
+      - bearerAuth: []
+      summary: Retrieve a storage location
+      tags:
+      - Storage
+    put:
+      operationId: updateStorageLocation
+      parameters:
+      - description: Name of storage location to create or update
+        explode: false
+        in: path
+        name: storageLocationName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: The source BlackPearl to use to get authentication credentials
+          for the new storage location.
+        explode: true
+        in: query
+        name: cloneCredentials
+        required: false
+        schema:
+          type: string
+        style: form
+      requestBody:
+        content:
+          application/json:
+            examples:
+              Nas:
+                summary: An example creating a NAS storage location
+                value:
+                  description: Payload when type = NAS
+                  isTarget: false
+                  path: /path/to/mounted/share
+                  type: NAS
+              SpectraNas:
+                summary: An example creating a Spectra NAS storage location
+                value:
+                  description: Payload when type = SpectraNAS
+                  spectraMgmtEndpoint: http://spectraNasDevice
+                  spectraPassword: password
+                  spectraUsername: user
+                  isTarget: true
+                  path: /path/to/mounted/share
+                  type: SpectraNAS
+              BlackPearl:
+                summary: An example creating a BlackPearl storage location
+                value:
+                  description: Payload when type = BlackPearl
+                  accessKeyId: accessKey
+                  spectraDataEndpoint: http://spectraDataEndpoint
+                  spectraMgmtEndpoint: http://spectraMgmtEndpoint
+                  spectraPassword: password
+                  spectraUsername: user
+                  bucket: bucket
+                  isTarget: true
+                  secretAccessKey: secretKey
+                  bucketPolicyId: bucketPolicyId
+                  type: BlackPearl
+              AmazonS3:
+                summary: An example creating an Amazon S3 storage location
+                value:
+                  description: Payload when type = AmazonS3
+                  accessKeyId: accessKey
+                  bucket: bucket
+                  isTarget: true
+                  secretAccessKey: secretKey
+                  type: AmazonS3
+                  s3Region: us-west-2
+              AmazonS3Glacier:
+                summary: An example creating an Amazon S3 Glacier storage location
+                value:
+                  description: Payload when type = AmazonS3Glacier
+                  accessKeyId: accessKey
+                  bucket: vault
+                  isTarget: true
+                  secretAccessKey: secretKey
+                  s3Region: us-west-2
+                  type: AmazonS3Glacier
+              MSAzure:
+                summary: An example creating a MS Azure storage location
+                value:
+                  description: Payload when type = MSAzure
+                  accessKeyId: accessKey
+                  bucket: container
+                  isTarget: true
+                  secretAccessKey: secretKey
+                  type: Azure
+              MSAzureArchive:
+                summary: An example creating a MS Azure Archive tier storage location
+                value:
+                  description: Payload when type = MSAzureArchive
+                  accessKeyId: accessKey
+                  bucket: container
+                  isTarget: true
+                  secretAccessKey: secretKey
+                  type: AzureArchive
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/api.storageLocation.Nas'
+              - $ref: '#/components/schemas/api.storageLocation.SpectraNas'
+              - $ref: '#/components/schemas/api.storageLocation.BlackPearl'
+              - $ref: '#/components/schemas/api.storageLocation.AmazonS3'
+              - $ref: '#/components/schemas/api.storageLocation.AmazonS3Glacier'
+              - $ref: '#/components/schemas/api.storageLocation.MSAzure'
+              - $ref: '#/components/schemas/api.storageLocation.MSAzureArchive'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.storageLocation'
+          description: StorageLocation successfully updated
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.storageLocation'
+          description: StorageLocation successfully created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Bad Request
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Conflict
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Server Error
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.storageLocation'
+          description: StorageLocation successfully updated
+      security:
+      - bearerAuth: []
+      summary: Create or update a storage location.
+      tags:
+      - Storage
+      x-codegen-request-body-name: body
+  /projects/scan/{projectName}:
+    put:
+      operationId: updateScanProject
+      parameters:
+      - description: Name of scan project to create or update
+        explode: false
+        in: path
+        name: projectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            examples:
+              ScanNow:
+                summary: Creating a scan project that will run once right now.
+                value:
+                  share: ShareToScan
+                  schedule:
+                    period: Now
+              ScanEveryMonth:
+                summary: Creating a scan project that will run at the beginning of
+                  each month.
+                value:
+                  share: ShareToScan
+                  schedule:
+                    period: Monthly
+                    interval: 1
+                    daysOfMonth:
+                    - 0
+            schema:
+              $ref: '#/components/schemas/api.project.Scan'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Scan'
+          description: Project successfully updated
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Scan'
+          description: Project successfully created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Server Error
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Scan'
+          description: Project successfully updated
+      security:
+      - bearerAuth: []
+      summary: Create or update a scan project.
+      tags:
+      - Project
+      x-codegen-request-body-name: body
+  /projects/archive/{projectName}:
+    put:
+      operationId: updateArchiveProject
+      parameters:
+      - description: Name of archive project to create or update
+        explode: false
+        in: path
+        name: projectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api.project.Archive'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Archive'
+          description: Project successfully updated
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Archive'
+          description: Project successfully created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Server Error
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Archive'
+          description: Project successfully updated
+      security:
+      - bearerAuth: []
+      summary: Create or update an archive project.
+      tags:
+      - Project
+      x-codegen-request-body-name: body
+  /projects/restore/{projectName}:
+    put:
+      operationId: updateRestoreProject
+      parameters:
+      - description: Name of restore project to create or update
+        explode: false
+        in: path
+        name: projectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api.project.Restore'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Restore'
+          description: Project successfully updated
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Restore'
+          description: Project successfully created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Server Error
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project.Restore'
+          description: Project successfully updated
+      security:
+      - bearerAuth: []
+      summary: Create or update an restore project.
+      tags:
+      - Project
+      x-codegen-request-body-name: body
+  /projects:
+    get:
+      operationId: listProjects
+      parameters:
+      - description: Number of projects to skip before returning subsequent results.
+        explode: true
+        in: query
+        name: skip
+        required: false
+        schema:
+          default: 0
+          format: int64
+          type: integer
+        style: form
+      - description: Maximum number of projects to return.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 500
+          format: int64
+          type: integer
+        style: form
+      - description: Set to true to list only the active projects.
+        explode: true
+        in: query
+        name: active
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: 'Specify which item to sort by. Default is to sort by created
+          in descending order. Options: created|name'
+        explode: true
+        in: query
+        name: sortBy
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: 'Specify sorting by project name as either ascending or descending.
+          Default ascending. Options: ASC|DESC'
+        explode: true
+        in: query
+        name: sortType
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: 'Specify the type of job to list. Can specify this parameter
+          multiple times with different values. If not specified, all job types are
+          retrieved. Options: Scan|Archive|ScanAndArchive|Restore|RestoreBreadcrumb|BackupDb|ProjectDelete'
+        explode: true
+        in: query
+        name: filterBy
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.ProjectPaginator'
+          description: OK
+        "400":
+          content: {}
+          description: Query parameters are not valid.
+        "500":
+          content: {}
+          description: The search provider has been prematurely closed.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.ProjectPaginator'
+          description: OK
+      security:
+      - bearerAuth: []
+      summary: List projects.
+      tags:
+      - Project
+  /projects/{projectName}:
+    get:
+      operationId: getProject
+      parameters:
+      - description: Name of the project to retrieve
+        explode: false
+        in: path
+        name: projectName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project'
+          description: Project successfully retieved
+        "400":
+          content: {}
+          description: Query parameters are not valid.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/server.RequestError'
+          description: Project not found
+        "500":
+          content: {}
+          description: The search provider has been prematurely closed.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.project'
+          description: Project successfully retieved
+      security:
+      - bearerAuth: []
+      summary: Retrieve a project
+      tags:
+      - Project
+components:
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+  schemas:
+    api.Credentials:
+      properties:
+        domain:
+          description: The Active Directory domain if applicable.
+          type: string
+        password:
+          description: The password for the user.
+          type: string
+        username:
+          description: The user login name.
+          type: string
+      required:
+      - password
+      - username
+      type: object
+    api.Token:
+      example:
+        role: role
+        domain: domain
+        token: token
+        username: username
+      properties:
+        domain:
+          description: The Active Directory domain if applicable.
+          type: string
+        role:
+          description: The role of the authenticated user.
+          type: string
+        token:
+          description: 'The bearer token to pass via the HTTP Authorization Header
+            in subsequent API commands. For example: Authorization: Bearer ''token'''
+          type: string
+        username:
+          description: The user login name.
+          type: string
+      required:
+      - role
+      - token
+      - username
+      type: object
+    server.RequestError:
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+      - code
+      - message
+      type: object
+    api.storageLocation:
+      example:
+        accessKeyId: accessKeyId
+        aDGroup: adGroup
+        s3Region: s3Region
+        description: description
+        type: BlackPearl
+        spectraMgmtEndpoint: spectraMgmtEndpoint
+        path: path
+        s3Endpoint: s3Endpoint
+        ignoreSSL: false
+        enableEncryption: false
+        retentionDays: 1
+        department: department
+        offPeakFilesPerSecondScanLimit: '{}'
+        spectraDataEndpoint: spectraDataEndpoint
+        spectraUsername: spectraUsername
+        created: 2000-01-23T04:56:07.000Z
+        bytesTransferredIn: 5
+        filesTransferredOut: 3
+        active: true
+        lastAccess: 2000-01-23T04:56:07.000Z
+        peakFilesPerSecondScanLimit: '{}'
+        packingType: None
+        bytesTransferredOut: 5
+        bucket: bucket
+        bucketPolicyId: bucketPolicyId
+        connected: true
+        isTarget: true
+        secretAccessKey: secretAccessKey
+        costPerTB: 7.0614014
+        lastScan: 2000-01-23T04:56:07.000Z
+        offPeakBytesPerSecondLimit: '{}'
+        filesTransferredIn: 9
+        name: name
+        spectraPassword: spectraPassword
+        peakTimesSchedule:
+        - durationMinutes: 1063
+          dayOfWeek: 4
+          startTimeHourAndMinutes: startTimeHourAndMinutes
+        - durationMinutes: 1063
+          dayOfWeek: 4
+          startTimeHourAndMinutes: startTimeHourAndMinutes
+        peakBytesPerSecondLimit: '{}'
+      properties:
+        accessKeyId:
+          description: For use only with BlackPearl, S3 or MSAzure.  The access key
+            ID of the credentials for BlackPearl, S3 or MS Azure.
+          nullable: true
+          type: string
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        aDGroup:
+          description: Sources can have an adGroup name associated with them to restrict
+            access to users not in the group.
+          nullable: true
+          type: string
+        spectraDataEndpoint:
+          description: For use only with BlackPearl.  The URL of the BlackPearl server
+            data port.
+          nullable: true
+          type: string
+        spectraMgmtEndpoint:
+          description: For use only with BlackPearl or SpectraNAS.  The URL of the
+            BlackPearl server management port.
+          nullable: true
+          type: string
+        spectraPassword:
+          description: For use only with BlackPearl or SpectraNAS.  The password to
+            login to the management port.  This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        spectraUsername:
+          description: For use only with BlackPearl or SpectraNAS.  The username to
+            login to the management port.
+          nullable: true
+          type: string
+        bucket:
+          description: Used for BlackPearl and S3/Archive endpoints.  The bucket/vault
+            to use for storage.
+          nullable: true
+          type: string
+        bucketPolicyId:
+          description: Used for specifying existing BlackPearl data policies.
+          nullable: true
+          type: string
+        bytesTransferredIn:
+          description: Total number of bytes transferred to/from this location. This
+            field is read-only.
+          format: int64
+          nullable: true
+          readOnly: true
+          type: integer
+        bytesTransferredOut:
+          description: Total number of bytes transferred to/from this location. This
+            field is read-only.
+          format: int64
+          nullable: true
+          readOnly: true
+          type: integer
+        connected:
+          description: True if location is currently connected to the server.  This
+            field is read-only.
+          nullable: true
+          readOnly: true
+          type: boolean
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        created:
+          description: Time when storage location was created.  This field is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        enableSnapshots:
+          description: For use only with SpectraNAS. Used to enable snapshots on the
+            SpectraNAS device.
+          nullable: true
+          type: boolean
+        filesTransferredIn:
+          description: Total number of bytes transferred to/from this location. This
+            field is read-only.
+          format: int64
+          nullable: true
+          readOnly: true
+          type: integer
+        filesTransferredOut:
+          description: Total number of bytes transferred to/from this location. This
+            field is read-only.
+          format: int64
+          nullable: true
+          readOnly: true
+          type: integer
+        isTarget:
+          description: Prevent location from use as a source. Set to true for BlackPearl.
+          nullable: true
+          type: boolean
+        keepReadOnly:
+          description: For use only with SpectraNAS. Used to keep the SpectraNAS device
+            in a Read-Only state after a job completes.
+          nullable: true
+          type: boolean
+        lastAccess:
+          description: Time when storage location was last accessed.  This field is
+            read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        lastScan:
+          description: Time when storage location was last scanned for files.  This
+            field is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        name:
+          description: Storage location name.  This is the location ID.
+          nullable: true
+          readOnly: true
+          type: string
+        offPeakBytesPerSecondLimit:
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        packingType:
+          description: How archived data should be packed.  This cannot be set on
+            NAS locations. Default is None.
+          enum:
+          - None
+          - Tar
+          - Zip
+          nullable: true
+          type: string
+        path:
+          description: Used for NAS source/target and S3 source locations, this is
+            the filesystem path to the NAS mount point and optionally the prefix for
+            S3 path matching.
+          nullable: true
+          type: string
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        s3Endpoint:
+          description: For use only with Amazon S3 or S3 emulators.  The URL of the
+            endpoint to which the server should connect to access the storage.
+          nullable: true
+          type: string
+        s3Region:
+          description: For use only with Amazon S3 or S3 emulators.  The S3 region
+            in which to connect.  If empty, the default region is assumed.
+          nullable: true
+          type: string
+        ignoreSSL:
+          description: For use only with S3 emulators.  Will ignore SSL certificate
+            errors (self signed certificates).
+          nullable: true
+          type: boolean
+        secretAccessKey:
+          description: For use only with BlackPearl, S3 or MSAzure.  The secret access
+            key of the credentials for BlackPearl, S3 or MS Azure. This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - isTarget
+      - retentionDays
+      - type
+      type: object
+    api.peakTimeSchedule:
+      example:
+        durationMinutes: 1063
+        dayOfWeek: 4
+        startTimeHourAndMinutes: startTimeHourAndMinutes
+      properties:
+        dayOfWeek:
+          description: The numerical day of the week on which to enforce this peak
+            rate limits time window. 0-based with the week starting on Sunday
+          format: integer
+          maximum: 6
+          minimum: 0
+          type: integer
+        durationMinutes:
+          description: The number of minutes beyond the start time to enforce the
+            peak time rate limit.
+          format: int32
+          maximum: 1440
+          minimum: 0
+          type: integer
+        startTimeHourAndMinutes:
+          description: The start time of peak hours expressed as a time within the
+            day in 24hr format, e.g. 18:30 would be 4:30pm.
+          pattern: ^\d{2}:\d{2}$
+          type: string
+      required:
+      - dayOfWeek
+      - durationMinutes
+      - startTimeHourAndMinutes
+      type: object
+    api.storageLocation.SpectraNas:
+      description: Used to create SpectraNAS storage locations.
+      properties:
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        aDGroup:
+          description: Sources can have an adGroup name associated with them to restrict
+            access to users not in the group.
+          nullable: true
+          type: string
+        spectraMgmtEndpoint:
+          description: For use only with SpectraNAS.  The URL of the SpectraNAS server
+            management port.
+          nullable: true
+          type: string
+        spectraPassword:
+          description: For use only with SpectraNAS.  The password to login to the
+            management port.  This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        spectraUsername:
+          description: For use only with SpectraNAS.  The username to login to the
+            management port.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        isTarget:
+          description: Prevent location from use as a source.
+          nullable: true
+          type: boolean
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        enableSnapshots:
+          description: For use only with SpectraNAS. Used to enable snapshots on the
+            SpectraNAS device.
+          nullable: true
+          type: boolean
+        keepReadOnly:
+          description: For use only with SpectraNAS. Used to keep the SpectraNAS device
+            in a Read-Only state after a job completes.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        path:
+          description: Used for SpectraNAS locations, this is the filesystem path
+            to the NAS mount point.
+          nullable: true
+          type: string
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - isTarget
+      - path
+      - spectraMgmtEndpoint
+      - spectraPassword
+      - spectraUsername
+      - type
+      type: object
+    api.storageLocation.Nas:
+      description: Used to create NAS storage locations.
+      properties:
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        aDGroup:
+          description: Sources can have an adGroup name associated with them to restrict
+            access to users not in the group.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        isTarget:
+          description: Prevent location from use as a source.
+          nullable: true
+          type: boolean
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        path:
+          description: Used for NAS locations, this is the filesystem path to the
+            NAS mount point.
+          nullable: true
+          type: string
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - isTarget
+      - path
+      - type
+      type: object
+    api.storageLocation.BlackPearl:
+      description: Used to create BlackPearl storage locations.
+      properties:
+        accessKeyId:
+          description: For use only with BlackPearl.  The access key ID of the credentials
+            for BlackPearl.
+          nullable: true
+          type: string
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        aDGroup:
+          description: Sources can have an adGroup name associated with them to restrict
+            access to users not in the group.
+          nullable: true
+          type: string
+        spectraDataEndpoint:
+          description: For use only with BlackPearl.  The URL of the BlackPearl server
+            data port.
+          nullable: true
+          type: string
+        spectraMgmtEndpoint:
+          description: For use only with BlackPearl.  The URL of the BlackPearl server
+            management port.
+          nullable: true
+          type: string
+        spectraPassword:
+          description: For use only with BlackPearl.  The password to login to the
+            management port.  This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        spectraUsername:
+          description: For use only with BlackPearl.  The username to login to the
+            management port.
+          nullable: true
+          type: string
+        bucket:
+          description: Used for BlackPearl endpoints.  The bucket/vault to use for
+            storage.
+          nullable: true
+          type: string
+        bucketPolicyId:
+          description: Used for specifying existing BlackPearl data policies.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        isTarget:
+          description: Prevent location from use as a source. Set to true for BlackPearl.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        packingType:
+          description: How archived data should be packed. Default is None.
+          enum:
+          - None
+          - Tar
+          - Zip
+          nullable: true
+          type: string
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        secretAccessKey:
+          description: For use only with BlackPearl. The secret access key of the
+            credentials for BlackPearl. This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - accessKeyId
+      - bucket
+      - isTarget
+      - secretAccessKey
+      - spectraDataEndpoint
+      - spectraMgmtEndpoint
+      - spectraPassword
+      - spectraUsername
+      - type
+      type: object
+    api.storageLocation.AmazonS3:
+      description: Used to create AmazonS3 storage locations.
+      properties:
+        accessKeyId:
+          description: For use only with AmazonS3.  The access key ID of the credentials
+            for AmazonS3.
+          nullable: true
+          type: string
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        aDGroup:
+          description: Sources can have an adGroup name associated with them to restrict
+            access to users not in the group.
+          nullable: true
+          type: string
+        bucket:
+          description: Used for AmazonS3 endpoints.  The bucket to use for storage.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        isTarget:
+          description: Prevent location from use as a source.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        s3Endpoint:
+          description: For use only with AmazonS3 or S3 emulators.  The URL of the
+            endpoint to which the server should connect to access the storage.
+          nullable: true
+          type: string
+        s3Region:
+          description: For use only with AmazonS3 or S3 emulators.  The S3 region
+            in which to connect.  If empty, the default region is assumed.
+          nullable: true
+          type: string
+        ignoreSSL:
+          description: For use only with S3 emulators.  Will ignore SSL certificate
+            errors (self signed certificates).
+          nullable: true
+          type: boolean
+        secretAccessKey:
+          description: For use only with AmazonS3.  The secret access key of the credentials
+            for AmazonS3. This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - accessKeyId
+      - bucket
+      - isTarget
+      - secretAccessKey
+      - type
+      type: object
+    api.storageLocation.AmazonS3Glacier:
+      description: Used to create AmazonS3Glacier storage locations.
+      properties:
+        accessKeyId:
+          description: For use only with AmazonS3 Glacier.  The access key ID of the
+            credentials AmazonS3 Glacier.
+          nullable: true
+          type: string
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        aDGroup:
+          description: Sources can have an adGroup name associated with them to restrict
+            access to users not in the group.
+          nullable: true
+          type: string
+        bucket:
+          description: Used for AmazonS3 Glacier endpoints.  The vault to use for
+            storage.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        isTarget:
+          description: Prevent location from use as a source.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        s3Endpoint:
+          description: For use only with AmazonS3 Glacier.  The URL of the endpoint
+            to which the server should connect to access the storage.
+          nullable: true
+          type: string
+        s3Region:
+          description: For use only with AmazonS3 Glacier.  The AmazonS3 Glacier region
+            in which to connect.  If empty, the default region is assumed.
+          nullable: true
+          type: string
+        ignoreSSL:
+          description: For use only with S3 emulators.  Will ignore SSL certificate
+            errors (self signed certificates).
+          nullable: true
+          type: boolean
+        secretAccessKey:
+          description: For use only with AmazonS3 Glacier.  The secret access key
+            of the credentials for AmazonS3 Glacier. This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - accessKeyId
+      - bucket
+      - isTarget
+      - secretAccessKey
+      - type
+      type: object
+    api.storageLocation.MSAzure:
+      description: Used to create MSAzure storage locations.
+      properties:
+        accessKeyId:
+          description: For use only with MSAzure.  The access key ID of the credentials
+            for MSAzure.
+          nullable: true
+          type: string
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        bucket:
+          description: Used for MSAzure endpoints.  The container to use for storage.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        isTarget:
+          description: Prevent location from use as a source. Set to true for MSAzure.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        secretAccessKey:
+          description: For use only with MSAzure.  The secret access key of the credentials
+            for MSAzure. This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - accessKeyId
+      - bucket
+      - isTarget
+      - secretAccessKey
+      - type
+      type: object
+    api.storageLocation.MSAzureArchive:
+      description: Used to create MSAzure Archive storage locations.
+      properties:
+        accessKeyId:
+          description: For use only with MSAzure Archive.  The access key ID of the
+            credentials for MSAzure Archive.
+          nullable: true
+          type: string
+        active:
+          description: Used to re-activate a 'deleted' storage location.
+          nullable: true
+          type: boolean
+        bucket:
+          description: Used for MSAzure Archive endpoints.  The container to use for
+            storage.
+          nullable: true
+          type: string
+        costPerTB:
+          description: Cost per TB of storage in units of department currency.  Only
+            valid when Department is set.
+          format: float
+          nullable: true
+          type: number
+        department:
+          description: ID of department responsible for location storage cost.
+          nullable: true
+          type: string
+        description:
+          description: Description of the storage location.
+          nullable: true
+          type: string
+        enableEncryption:
+          description: Used to enable encryption that has been configured for the
+            product.
+          nullable: true
+          type: boolean
+        isTarget:
+          description: Prevent location from use as a source. Set to true for MSAzure
+            Archive.
+          nullable: true
+          type: boolean
+        offPeakBytesPerSecondLimit:
+          default: 0
+          description: The limit during off-peak hours, expressed in total number
+            of bytes per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        offPeakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during off-peak hours, expressed in total
+            number of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakBytesPerSecondLimit:
+          default: 0
+          description: The limit during peak hours, expressed in total number of bytes
+            per second.  Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakFilesPerSecondScanLimit:
+          default: 0
+          description: The file scan limit during peak hours, expressed in total number
+            of files per second. Specify 0 for no limit.
+          format: double
+          nullable: true
+          type: number
+        peakTimesSchedule:
+          description: A list of the days of the week where rate limits are enforced
+            during peak and off-peak times.  If a day of week is not in the list,
+            it is assumed to be unlimited.
+          items:
+            $ref: '#/components/schemas/api.peakTimeSchedule'
+          nullable: true
+          type: array
+        retentionDays:
+          description: The number of days to retain files on this target before scheduling
+            files for deletion. This field is only applicable to targets.
+          format: int32
+          nullable: true
+          type: integer
+        secretAccessKey:
+          description: For use only with MSAzure Archive.  The secret access key of
+            the credentials for MSAzure Archive. This is write-only.
+          format: password
+          nullable: true
+          type: string
+          writeOnly: true
+        type:
+          enum:
+          - BlackPearl
+          - NAS
+          - SpectraNAS
+          - AmazonS3
+          - AmazonS3Glacier
+          - MSAzure
+          - MSAzureArchive
+          nullable: true
+          type: string
+      required:
+      - accessKeyId
+      - bucket
+      - isTarget
+      - secretAccessKey
+      - type
+      type: object
+    api.project:
+      example:
+        workingDirectory: workingDirectory
+        projectType: Scan
+        description: description
+        active: true
+        enabled: true
+        restoreManifest: restoreManifest
+        targets:
+        - targets
+        - targets
+        tags:
+        - tags
+        - tags
+        filter:
+          excludeDirectories:
+          - excludeDirectories
+          - excludeDirectories
+          excludeFileTypes:
+          - excludeFileTypes
+          - excludeFileTypes
+          minimumSize: Any
+          minimumAge: AnyAge
+          includeDirectories:
+          - includeDirectories
+          - includeDirectories
+          includeFileTypes:
+          - includeFileTypes
+          - includeFileTypes
+        schedule:
+          monthsOfYear:
+          - monthsOfYear
+          - monthsOfYear
+          period: Now
+          daysOfMonth:
+          - 0
+          - 0
+          startMonth: 3
+          startDay: 5
+          startHour: 13
+          startYear: 7060
+          interval: 6
+          daysOfWeek:
+          - daysOfWeek
+          - daysOfWeek
+          startMinute: 33
+        share: share
+        breadCrumbAction: KeepOriginal
+        emailOnComplete:
+        - emailOnComplete
+        - emailOnComplete
+        restoreVersions:
+        - restoreVersions
+        - restoreVersions
+        status:
+          name: project name
+          nextRunTime: 2000-01-23T04:56:07.000Z
+          createdBy: createdBy
+          created: 2000-01-23T04:56:07.000Z
+          lastSuccessfulJob: 2000-01-23T04:56:07.000Z
+          lastJobRunTime: 2000-01-23T04:56:07.000Z
+          updated: 2000-01-23T04:56:07.000Z
+          updatedBy: updatedBy
+          conflictDetected: 2000-01-23T04:56:07.000Z
+      properties:
+        description:
+          description: Description of the project.
+          nullable: true
+          type: string
+        share:
+          description: The source share with which the project will work. This is
+            not required when updating the project.
+          nullable: true
+          type: string
+        workingDirectory:
+          description: For restore projects, the location within the share where the
+            files are restored. For archive projects, the starting subdirectory on
+            the share to archive. For scan projects, the directory on the share to
+            scan.  Default is the share root.
+          nullable: true
+          type: string
+        tags:
+          description: Tags to attach to jobs executed by this project.
+          items:
+            type: string
+          nullable: true
+          type: array
+        active:
+          description: Used to re-activate a deactivated project.
+          nullable: true
+          type: boolean
+        enabled:
+          description: Used to pause/resume a project.
+          nullable: true
+          type: boolean
+        projectType:
+          description: The type of project.
+          enum:
+          - Scan
+          - Archive
+          - ScanAndArchive
+          - Restore
+          - RestoreBreadcrumb
+          - BackupDb
+          - RetentionDelete
+          - ProjectDelete
+          nullable: true
+          type: string
+        breadCrumbAction:
+          description: For archive projects, the action that is performed on the original
+            source file after successful archive. For restore breadcrumb projects,
+            this specifies the type of bread crumb to create.
+          enum:
+          - KeepOriginal
+          - RemoveOriginal
+          - CreateSymbolicLink
+          - CreateHtmlLink
+          - CreateHtmlLinkSingle
+          - RemoveOriginalAndDirectories
+          nullable: true
+          type: string
+        emailOnComplete:
+          description: A list of users from which email addresses may be found for
+            sending notifications.
+          items:
+            type: string
+          nullable: true
+          type: array
+        restoreManifest:
+          description: The name of the manifest containing the files to be restored.
+            This is synonymous with the original archive job that originally archived
+            the files.
+          nullable: true
+          type: string
+        restoreVersions:
+          description: The list of versions from the manifest to restore.
+          items:
+            type: string
+          nullable: true
+          type: array
+        targets:
+          description: The storage endpoints where files will be archived.
+          items:
+            type: string
+          maxLength: 3
+          nullable: true
+          type: array
+        filter:
+          $ref: '#/components/schemas/api.project.Filter'
+        schedule:
+          $ref: '#/components/schemas/api.project.Schedule'
+        status:
+          $ref: '#/components/schemas/api.project.Status'
+      required:
+      - schedule
+      - share
+      type: object
+    api.project.Archive:
+      description: Project that archives from source to one or more targets.
+      example:
+        filter:
+          excludeDirectories:
+          - excludeDirectories
+          - excludeDirectories
+          excludeFileTypes:
+          - excludeFileTypes
+          - excludeFileTypes
+          minimumSize: Any
+          minimumAge: AnyAge
+          includeDirectories:
+          - includeDirectories
+          - includeDirectories
+          includeFileTypes:
+          - includeFileTypes
+          - includeFileTypes
+        schedule:
+          monthsOfYear:
+          - monthsOfYear
+          - monthsOfYear
+          period: Now
+          daysOfMonth:
+          - 0
+          - 0
+          startMonth: 3
+          startDay: 5
+          startHour: 13
+          startYear: 7060
+          interval: 6
+          daysOfWeek:
+          - daysOfWeek
+          - daysOfWeek
+          startMinute: 33
+        workingDirectory: workingDirectory
+        projectType: Archive
+        description: description
+        active: true
+        enabled: true
+        share: share
+        breadCrumbAction: KeepOriginal
+        targets:
+        - targets
+        - targets
+        tags:
+        - tags
+        - tags
+        status:
+          nextRunTime: 2000-01-23T04:56:07.000Z
+          createdBy: createdBy
+          created: 2000-01-23T04:56:07.000Z
+          lastSuccessfulJob: 2000-01-23T04:56:07.000Z
+          lastJobRunTime: 2000-01-23T04:56:07.000Z
+          updated: 2000-01-23T04:56:07.000Z
+          updatedBy: updatedBy
+          conflictDetected: 2000-01-23T04:56:07.000Z
+      properties:
+        description:
+          description: Description of the project.
+          nullable: true
+          type: string
+        share:
+          description: The source share the project will archive files off of. This
+            is not required when updating the project.
+          nullable: true
+          type: string
+        workingDirectory:
+          description: The directory on the share to archive.  Default is the share
+            root.
+          nullable: true
+          type: string
+        tags:
+          description: Tags to attach to jobs executed by this project.
+          items:
+            type: string
+          nullable: true
+          type: array
+        active:
+          description: Used to re-activate a deactivated project.
+          nullable: true
+          type: boolean
+        enabled:
+          description: Used to pause/resume a project.
+          nullable: true
+          type: boolean
+        projectType:
+          description: The type of archive to perform.
+          enum:
+          - Archive
+          - ScanAndArchive
+          nullable: true
+          type: string
+        breadCrumbAction:
+          default: KeepOriginal
+          description: The action that is performed on the original source file after
+            successful archive.
+          enum:
+          - KeepOriginal
+          - RemoveOriginal
+          - CreateSymbolicLink
+          - CreateHtmlLink
+          - CreateHtmlLinkSingle
+          - RemoveOriginalAndDirectories
+          nullable: true
+          type: string
+        targets:
+          description: The storage endpoints where files will be archived.
+          items:
+            type: string
+          maxLength: 3
+          nullable: true
+          type: array
+        filter:
+          $ref: '#/components/schemas/api.project.Filter'
+        schedule:
+          $ref: '#/components/schemas/api.project.Schedule'
+        status:
+          $ref: '#/components/schemas/api.project.Status'
+      required:
+      - projectType
+      - schedule
+      - share
+      - targets
+      type: object
+    api.project.Restore:
+      description: Project that restores files and directories to a share.
+      example:
+        schedule:
+          monthsOfYear:
+          - monthsOfYear
+          - monthsOfYear
+          period: Now
+          daysOfMonth:
+          - 0
+          - 0
+          startMonth: 3
+          startDay: 5
+          startHour: 13
+          startYear: 7060
+          interval: 6
+          daysOfWeek:
+          - daysOfWeek
+          - daysOfWeek
+          startMinute: 33
+        workingDirectory: workingDirectory
+        projectType: Restore
+        description: description
+        active: true
+        enabled: true
+        share: share
+        breadCrumbAction: KeepOriginal
+        emailOnComplete:
+        - emailOnComplete
+        - emailOnComplete
+        restoreManifest: restoreManifest
+        restoreVersions:
+        - restoreVersions
+        - restoreVersions
+        tags:
+        - tags
+        - tags
+        status:
+          nextRunTime: 2000-01-23T04:56:07.000Z
+          createdBy: createdBy
+          created: 2000-01-23T04:56:07.000Z
+          lastSuccessfulJob: 2000-01-23T04:56:07.000Z
+          lastJobRunTime: 2000-01-23T04:56:07.000Z
+          updated: 2000-01-23T04:56:07.000Z
+          updatedBy: updatedBy
+          conflictDetected: 2000-01-23T04:56:07.000Z
+      properties:
+        description:
+          description: Description of the project.
+          nullable: true
+          type: string
+        share:
+          description: The source share the project will restore files to. This is
+            not required when updating the project.
+          nullable: true
+          type: string
+        workingDirectory:
+          description: The directory on the share where the files will be restored.
+            Default is the share root.
+          nullable: true
+          type: string
+        tags:
+          description: Tags to attach to jobs executed by this project.
+          items:
+            type: string
+          nullable: true
+          type: array
+        active:
+          description: Used to re-activate a deactivated project.
+          nullable: true
+          type: boolean
+        enabled:
+          description: Used to pause/resume a project.
+          nullable: true
+          type: boolean
+        projectType:
+          description: The type of restore to perform.
+          enum:
+          - Restore
+          - RestoreBreadcrumb
+          nullable: true
+          type: string
+        breadCrumbAction:
+          description: The type of bread crumb to create. This is only valid with
+            RestoreBreadcrumb projects.
+          enum:
+          - CreateSymbolicLink
+          - CreateHtmlLink
+          - CreateHtmlLinkSingle
+          nullable: true
+          type: string
+        emailOnComplete:
+          description: A list of users from which email addresses may be found for
+            sending notifications.
+          items:
+            type: string
+          nullable: true
+          type: array
+        restoreManifest:
+          description: The name of the manifest containing the files to be restored.
+            This is synonymous with the original archive job that originally archived
+            the files.
+          nullable: true
+          type: string
+        restoreVersions:
+          description: The list of versions from the manifest to restore. If empty,
+            the entire manifest is restored.
+          items:
+            type: string
+          nullable: true
+          type: array
+        schedule:
+          $ref: '#/components/schemas/api.project.Schedule'
+        status:
+          $ref: '#/components/schemas/api.project.Status'
+      required:
+      - projectType
+      - restoreManifest
+      - schedule
+      - share
+      type: object
+    api.project.Scan:
+      description: Project that scans a source share.
+      example:
+        filter:
+          excludeDirectories:
+          - excludeDirectories
+          - excludeDirectories
+          excludeFileTypes:
+          - excludeFileTypes
+          - excludeFileTypes
+          minimumSize: Any
+          minimumAge: AnyAge
+          includeDirectories:
+          - includeDirectories
+          - includeDirectories
+          includeFileTypes:
+          - includeFileTypes
+          - includeFileTypes
+        schedule:
+          monthsOfYear:
+          - monthsOfYear
+          - monthsOfYear
+          period: Now
+          daysOfMonth:
+          - 0
+          - 0
+          startMonth: 3
+          startDay: 5
+          startHour: 13
+          startYear: 7060
+          interval: 6
+          daysOfWeek:
+          - daysOfWeek
+          - daysOfWeek
+          startMinute: 33
+        workingDirectory: workingDirectory
+        description: description
+        active: true
+        enabled: true
+        share: share
+        tags:
+        - tags
+        - tags
+        status:
+          nextRunTime: 2000-01-23T04:56:07.000Z
+          createdBy: createdBy
+          created: 2000-01-23T04:56:07.000Z
+          lastSuccessfulJob: 2000-01-23T04:56:07.000Z
+          lastJobRunTime: 2000-01-23T04:56:07.000Z
+          updated: 2000-01-23T04:56:07.000Z
+          updatedBy: updatedBy
+          conflictDetected: 2000-01-23T04:56:07.000Z
+      properties:
+        description:
+          description: Description of the project.
+          nullable: true
+          type: string
+        share:
+          description: The source share the project will scan. This is not required
+            when updating the project.
+          nullable: true
+          type: string
+        workingDirectory:
+          description: The directory on the share to scan.  Default is the share root.
+          nullable: true
+          type: string
+        tags:
+          description: Tags to attach to jobs executed by this project.
+          items:
+            type: string
+          nullable: true
+          type: array
+        active:
+          description: Used to re-activate a deactivated project.
+          nullable: true
+          type: boolean
+        enabled:
+          description: Used to pause/resume a project.
+          nullable: true
+          type: boolean
+        filter:
+          $ref: '#/components/schemas/api.project.Filter'
+        schedule:
+          $ref: '#/components/schemas/api.project.Schedule'
+        status:
+          $ref: '#/components/schemas/api.project.Status'
+      required:
+      - schedule
+      - share
+      type: object
+    api.project.Filter:
+      description: Filter to limit operations to a set of files based on location.
+      example:
+        excludeDirectories:
+        - excludeDirectories
+        - excludeDirectories
+        excludeFileTypes:
+        - excludeFileTypes
+        - excludeFileTypes
+        minimumSize: Any
+        minimumAge: AnyAge
+        includeDirectories:
+        - includeDirectories
+        - includeDirectories
+        includeFileTypes:
+        - includeFileTypes
+        - includeFileTypes
+      properties:
+        excludeDirectories:
+          description: Directories to exclude.
+          items:
+            type: string
+          nullable: true
+          type: array
+        excludeFileTypes:
+          description: File types to exclude.
+          items:
+            type: string
+          nullable: true
+          type: array
+        includeDirectories:
+          description: Directories to include.  Specifying include directories will
+            exclude any directories not explicitly identified here.
+          items:
+            type: string
+          nullable: true
+          type: array
+        includeFileTypes:
+          description: File types to include. Specifying include file types will exclude
+            any file types not explicitly identified here.
+          items:
+            type: string
+          nullable: true
+          type: array
+        minimumAge:
+          description: The minimum age of files with which this project will work.  Default
+            is AnyAge.
+          enum:
+          - AnyAge
+          - ThirtyDays
+          - NinetyDays
+          - SixMonths
+          - OneYear
+          - TwoYears
+          - SevenYears
+          - CustomAge
+          nullable: true
+          type: string
+        customAgeInDays:
+          description: The number of days old a file must equal or exceed for it to
+            be processed by the job. This is only valid if CustomAge was selected
+            for minimumAge.
+          nullable: true
+          type: integer
+        minimumSize:
+          description: The minimum size of files with which this project will work.
+            Default is Any.
+          enum:
+          - Any
+          - Gt1MB
+          - Gt10MB
+          - Gt100MB
+          - Gt1GB
+          - Gt10GB
+          - Gt100GB
+          nullable: true
+          type: string
+      type: object
+    api.project.Schedule:
+      description: Schedule for the project. Determines when the project runs.
+      example:
+        monthsOfYear:
+        - monthsOfYear
+        - monthsOfYear
+        period: Now
+        daysOfMonth:
+        - 0
+        - 0
+        startMonth: 3
+        startDay: 5
+        startHour: 13
+        startYear: 7060
+        interval: 6
+        daysOfWeek:
+        - daysOfWeek
+        - daysOfWeek
+        startMinute: 33
+      properties:
+        daysOfMonth:
+          description: For monthly and yearly schedules, list the calendar days of
+            the month to execute.  If this number is past the last day of that month,
+            the last day of the month is assumed.
+          items:
+            type: integer
+          nullable: true
+          type: array
+        daysOfWeek:
+          description: For weekly and monthly schedules, list the days of the week
+            in those weeks and months on which to execute.
+          items:
+            type: string
+          nullable: true
+          type: array
+        interval:
+          description: The period should happen every n days/weeks/months/years.  This
+            should be 1 for daily/weekly/monthly/yearly, 2 for every other day/week/month/year,
+            3 for every third, etc.
+          nullable: true
+          type: integer
+        monthsOfYear:
+          description: For monthly and yearly schedules, list the months in which
+            to execute.
+          items:
+            type: string
+          nullable: true
+          type: array
+        period:
+          description: How often to execute projects associated with this schedule.
+          enum:
+          - Now
+          - Once
+          - Daily
+          - Weekly
+          - Monthly
+          - Yearly
+          nullable: true
+          type: string
+        startDay:
+          description: The day on which to start, from 1 to 31.  Ignored if the schedule
+            period is Now.
+          format: int32
+          maximum: 31
+          minimum: 1
+          nullable: true
+          type: integer
+        startHour:
+          description: The hour to start, from 0 to 23.  Ignored if the schedule period
+            is Now.
+          format: int32
+          maximum: 23
+          minimum: 0
+          nullable: true
+          type: integer
+        startMinute:
+          description: The minute of the hour to start, from 0 to 59.  Ignored if
+            the schedule period is Now.
+          format: int32
+          maximum: 59
+          minimum: 0
+          nullable: true
+          type: integer
+        startMonth:
+          description: The month in which to start, from 1 to 12.  Ignored if the
+            schedule period is Now.
+          format: int32
+          maximum: 12
+          minimum: 1
+          nullable: true
+          type: integer
+        startYear:
+          description: The year in which to start. Ignored if the schedule period
+            is Now.
+          format: int32
+          maximum: 9999
+          nullable: true
+          type: integer
+      required:
+      - period
+      type: object
+    api.project.Status:
+      description: Status of the project. All values are read only.
+      example:
+        name: project name
+        nextRunTime: 2000-01-23T04:56:07.000Z
+        createdBy: createdBy
+        created: 2000-01-23T04:56:07.000Z
+        lastSuccessfulJob: 2000-01-23T04:56:07.000Z
+        lastJobRunTime: 2000-01-23T04:56:07.000Z
+        updated: 2000-01-23T04:56:07.000Z
+        updatedBy: updatedBy
+        conflictDetected: 2000-01-23T04:56:07.000Z
+      properties:
+        name:
+          description: The name of the project. This cannot be modified.
+          nullable: true
+          readOnly: true
+          type: string
+        created:
+          description: Time when the project was created.  This is set automatically
+            and is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        createdBy:
+          description: The user that created the project.  This is set automatically
+            and is read-only.
+          nullable: true
+          readOnly: true
+          type: string
+        updated:
+          description: The time the project information was last updated.  This is
+            set automatically and is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        updatedBy:
+          description: The user that last updated the project.  This is set automatically
+            and is read-only.
+          nullable: true
+          readOnly: true
+          type: string
+        lastJobRunTime:
+          description: Time when a job last ran for this project.  This is set automatically
+            and is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        lastSuccessfulJob:
+          description: End time of most recent successful job for this project.  This
+            is set automatically and is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        conflictDetected:
+          description: If the last attempt to run the project ran into a conflict
+            with an existing job, this will be set. This is set automatically and
+            is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+        nextRunTime:
+          description: The next time this project is scheduled to run. This is set
+            automatically and is read-only.
+          format: date-time
+          nullable: true
+          readOnly: true
+          type: string
+    api.StorageLocationPaginator:
+      example:
+        ResultOffset: 6
+        TotalResults: 1
+        ResultLimit: 0
+        Timestamp: 2000-01-23T04:56:07.000Z
+        data:
+        - accessKeyId: accessKeyId
+          s3Region: s3Region
+          description: description
+          type: BlackPearl
+          spectraMgmtEndpoint: spectraMgmtEndpoint
+          path: path
+          s3Endpoint: s3Endpoint
+          ignoreSSL: false
+          retentionDays: 1
+          department: department
+          offPeakFilesPerSecondScanLimit: '{}'
+          spectraDataEndpoint: spectraDataEndpoint
+          spectraUsername: spectraUsername
+          created: 2000-01-23T04:56:07.000Z
+          bytesTransferredIn: 5
+          filesTransferredOut: 3
+          active: true
+          lastAccess: 2000-01-23T04:56:07.000Z
+          peakFilesPerSecondScanLimit: '{}'
+          packingType: None
+          bytesTransferredOut: 5
+          bucket: bucket
+          connected: true
+          enableEncryption: false
+          isTarget: true
+          secretAccessKey: secretAccessKey
+          costPerTB: 7.0614014
+          lastScan: 2000-01-23T04:56:07.000Z
+          offPeakBytesPerSecondLimit: '{}'
+          filesTransferredIn: 9
+          name: name
+          spectraPassword: spectraPassword
+          peakTimesSchedule:
+          - durationMinutes: 1063
+            dayOfWeek: 4
+            startTimeHourAndMinutes: startTimeHourAndMinutes
+          - durationMinutes: 1063
+            dayOfWeek: 4
+            startTimeHourAndMinutes: startTimeHourAndMinutes
+          peakBytesPerSecondLimit: '{}'
+      properties:
+        ResultLimit:
+          format: int64
+          type: integer
+        ResultOffset:
+          format: int64
+          type: integer
+        Timestamp:
+          format: date-time
+          type: string
+        TotalResults:
+          format: int64
+          type: integer
+        data:
+          items:
+            $ref: '#/components/schemas/api.storageLocation'
+          type: array
+      required:
+      - ResultLimit
+      - ResultOffset
+      - Timestamp
+      - TotalResults
+      - data
+      type: object
+    api.ProjectPaginator:
+      example:
+        ResultOffset: 6
+        TotalResults: 1
+        ResultLimit: 0
+        Timestamp: 2000-01-23T04:56:07.000Z
+        data:
+        - filter:
+            excludeDirectories:
+            - excludeDirectories
+            - excludeDirectories
+            excludeFileTypes:
+            - excludeFileTypes
+            - excludeFileTypes
+            name: name
+            description: description
+            includeDirectories:
+            - includeDirectories
+            - includeDirectories
+            includeFileTypes:
+            - includeFileTypes
+            - includeFileTypes
+            tags:
+            - tags
+            - tags
+          schedule:
+            startMonth: 2
+            startDay: 4
+            startYear: 7060
+            description: description
+            daysOfWeek:
+            - daysOfWeek
+            - daysOfWeek
+            tags:
+            - tags
+            - tags
+            scheduleInterval: Now
+            monthOfYear:
+            - monthOfYear
+            - monthOfYear
+            lastRunTime: 2000-01-23T04:56:07.000Z
+            nextRunTime: 2000-01-23T04:56:07.000Z
+            dayOfMonth:
+            - 0
+            - 0
+            startHour: 13
+            name: name
+            every: 6
+            startMinute: 33
+          task:
+            workingDirectory: workingDirectory
+            created: 2000-01-23T04:56:07.000Z
+            description: description
+            lastSuccessfulJob: 2000-01-23T04:56:07.000Z
+            abstract: abstract
+            lastJobRunTime: 2000-01-23T04:56:07.000Z
+            restoreManifest: restoreManifest
+            enabled: true
+            tags:
+            - tags
+            - tags
+            createdBy: createdBy
+            minimumSize: Any
+            minimumAge: AnyAge
+            name: name
+            share: share
+            updated: 2000-01-23T04:56:07.000Z
+            updatedBy: updatedBy
+            conflictDetected: 2000-01-23T04:56:07.000Z
+            restoreVersions:
+            - restoreVersions
+            - restoreVersions
+            policy: policy
+          name: name
+          policy:
+            schedule: schedule
+            daysRestoredBeforeDelete: 0
+            postArchiveAction: KeepOriginal
+            policyType: Scan
+            name: name
+            description: description
+            filters:
+            - filters
+            - filters
+            priority: Low
+            targets:
+            - targets
+            - targets
+            enabled: true
+            tags:
+            - tags
+            - tags
+      properties:
+        ResultLimit:
+          format: int64
+          type: integer
+        ResultOffset:
+          format: int64
+          type: integer
+        Timestamp:
+          format: date-time
+          type: string
+        TotalResults:
+          format: int64
+          type: integer
+        data:
+          items:
+            $ref: '#/components/schemas/api.project'
+          type: array
+      required:
+      - ResultLimit
+      - ResultOffset
+      - Timestamp
+      - TotalResults
+      - data
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
