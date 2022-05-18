@@ -243,10 +243,12 @@ func FullVerifyCycle(ssc *SscClient, args *Arguments) error {
 		return fmt.Errorf("get latest job failed for project %s\n%v\n", migrateProjectName, err)
 	}
 
-	fmt.Printf("Waiting for physical placement on %s ", fullPath)
-	err = waitForPlacement(ssc, args)
-	if err != nil {
-		return fmt.Errorf("waitForPlacement failed %v\n", err)
+	if !args.DontWaitForTape {
+		fmt.Printf("Waiting for physical placement on %s ", fullPath)
+		err = waitForPlacement(ssc, args)
+		if err != nil {
+			return fmt.Errorf("waitForPlacement failed %v\n", err)
+		}
 	}
 
 	/*

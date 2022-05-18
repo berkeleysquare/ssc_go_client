@@ -31,6 +31,7 @@ type Arguments struct {
 	Prefix string
 	Start, Count int
 	IgnoreCert bool
+	DontWaitForTape bool
 	MakeLinks string
 	Endpoint, Proxy string
 	AccessKey, SecretKey string
@@ -57,6 +58,7 @@ func ParseArgs() (*Arguments, error) {
 	clone := flag.String("clone", "", "target to clone")
 	makeLinks := flag.String("make_links", "none", "none|single|individual|symbolic replace files with HTML or sym links")
 	ignoreCert := flag.Bool("ignore_cert", false, "use https with self-signed certificate")
+	dontWaitForTape := flag.Bool("dont_wait_for_tape", false, "skip wait for tape placement")
 	endpointParam := flag.String("endpoint", "", "Specifies the url to the DS3 server.")
 	accessKeyParam := flag.String("access_key", "", "Specifies the access_key for the DS3 user.")
 	secretKeyParam := flag.String("secret_key", "", "Specifies the secret_key for the DS3 user.")
@@ -85,6 +87,7 @@ func ParseArgs() (*Arguments, error) {
 		Count: *count,
 		MakeLinks: *makeLinks,
 		IgnoreCert: *ignoreCert,
+		DontWaitForTape: *dontWaitForTape,
 		Endpoint: paramOrEnv(*endpointParam, "DS3_ENDPOINT"),
 		AccessKey: paramOrEnv(*accessKeyParam, "DS3_ACCESS_KEY"),
 		SecretKey: paramOrEnv(*secretKeyParam, "DS3_SECRET_KEY"),

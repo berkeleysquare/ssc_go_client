@@ -26,12 +26,12 @@ On Windows, A directory under C:\StorCycle is recommended, e.g., C:\StorCycle\ve
 
 Display available commands:
 ```shell
-$ ssc_cli --command list_commands
+$ ssc-cli --command list_commands
 ```
 
 Display available parameters:
 ```shell
-$ ssc_cli --help
+$ ssc-cli --help
 ```
 
 Run full cycle verify example:
@@ -39,7 +39,7 @@ First create a BlackPearl target storage location using the GUI
 or API. The test location will clone that to acquire credentials. 
 In the example, bp-sandbox is the location to be cloned.
 ```shell
-$ ssc_cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command full_verify --directory C:\\StorCycle\\verify --clone bp-sandbox
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command full_verify --directory C:\\StorCycle\\verify --clone bp-sandbox
 ```
 The full_cycle command will write status to the console at each task. 
 Steps which must wait for tasks to complete  will print a period (.) to the console each attempt.

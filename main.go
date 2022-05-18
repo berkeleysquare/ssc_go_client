@@ -23,7 +23,7 @@ func main() {
 	// Create client
 	storCycle, err := client.CreateClient(args)
 	if err != nil {
-		fmt.Printf("could not creat client %v\n", err)
+		fmt.Printf("could not create client %v\n", err)
 		return
 	}
 
