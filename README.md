@@ -33,8 +33,19 @@ Display available parameters:
 ```shell
 $ ssc-cli --help
 ```
+###Full cycle test
+The full cycle test verifies StorCycle operation and demonstrates full persistence through to tape 
+as well as data integrity. It must communicate both with StorCycle and the BlackPearl,
+so both credentials need to be provided. StorCycle credentials are passed in as CLI parameters
+ (e.g., --name Administrator --password spectra). The BlackPearl credentials can be set as environment variables or passed in 
+to ssc-cli (e.g., --endpoint http://10.85.41.36 --secret_key btkDKJBd --access_key ams=)
+* `DS3_ENDPOINT` - The URL to the DS3 Endpoint 
+* `DS3_ACCESS_KEY` - The DS3 access key
+* `DS3_SECRET_KEY` - The DS3 secret key
+* `http_proxy` - If set, the `Client` instance will proxy through this URL
 
-Run full cycle verify example:
+ 
+###Run full cycle verify example:
 First create a BlackPearl target storage location using the GUI
 or API. The test location will clone that to acquire credentials. 
 In the example, bp-sandbox is the location to be cloned.
