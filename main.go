@@ -20,13 +20,20 @@ func main() {
 		return
 	}
 
-	// Create client
-	storCycle, err := client.CreateClient(args)
+	// Create client if ocomamnd requires it
+	var storCycle *client.SscClient
+	tokenRequireed, err := client.CommandRequiresClientToken(args)
 	if err != nil {
-		fmt.Printf("could not create client %v\n", err)
+		fmt.Printf("unknown command %v\n", err )
 		return
 	}
-
+	if tokenRequireed {
+		storCycle, err = client.CreateClient(args)
+		if err != nil {
+			fmt.Printf("could not create client %v\n", err)
+			return
+		}
+	}
 
 	// Run the command
 	err = client.RunCommand(storCycle, args)

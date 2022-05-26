@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"flag"
+	"math"
 	"os"
 )
 
@@ -35,6 +36,7 @@ type Arguments struct {
 	MakeLinks string
 	Endpoint, Proxy string
 	AccessKey, SecretKey string
+	OutputFile string
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -49,7 +51,7 @@ func ParseArgs() (*Arguments, error) {
 	projectName := flag.String("project_name", "", "project name")
 	prefix := flag.String("prefix", "", "string to start share name")
 	start := flag.Int("start", 0, "number/auffix of first share")
-	count := flag.Int("count", 1000, "number of shares")
+	count := flag.Int("count", math.MaxInt, "limit of items processed")
 	directory := flag.String("directory", "\\", "directory on share")
 	includeDirectory := flag.String("include_directory", "", "explicitly include directory")
 	excludeDirectory := flag.String("exclude_directory", "", "exclude directory")
@@ -63,36 +65,38 @@ func ParseArgs() (*Arguments, error) {
 	accessKeyParam := flag.String("access_key", "", "Specifies the access_key for the DS3 user.")
 	secretKeyParam := flag.String("secret_key", "", "Specifies the secret_key for the DS3 user.")
 	proxyParam := flag.String("proxy", "", "Specifies the HTTP proxy to route through.")
+	outputFile:= flag.String("out", "", "output file")
 	flag.Parse()
 
 	// Build the arguments object.
 	args := Arguments{
-		Url: *url,
-		Command: *command,
-		Bucket: *bucket,
-		Job: *job,
-		Name: *name,
-		FileName: *fileName,
-		Password: *password,
-		Domain: *domain,
-		Prefix: *prefix,
-		Directory: *directory,
+		Url:              *url,
+		Command:          *command,
+		Bucket:           *bucket,
+		Job:              *job,
+		Name:             *name,
+		FileName:         *fileName,
+		Password:         *password,
+		Domain:           *domain,
+		Prefix:           *prefix,
+		Directory:        *directory,
 		IncludeDirectory: *includeDirectory,
 		ExcludeDirectory: *excludeDirectory,
-		Share: *share,
-		Target: *target,
-		Clone: *clone,
-		ProjectName: *projectName,
-		Start: *start,
-		Count: *count,
-		MakeLinks: *makeLinks,
-		IgnoreCert: *ignoreCert,
-		DontWaitForTape: *dontWaitForTape,
-		Endpoint: paramOrEnv(*endpointParam, "DS3_ENDPOINT"),
-		AccessKey: paramOrEnv(*accessKeyParam, "DS3_ACCESS_KEY"),
-		SecretKey: paramOrEnv(*secretKeyParam, "DS3_SECRET_KEY"),
-		Proxy: paramOrEnv(*proxyParam, "DS3_PROXY"),}
-
+		Share:            *share,
+		Target:           *target,
+		Clone:            *clone,
+		ProjectName:      *projectName,
+		Start:            *start,
+		Count:            *count,
+		MakeLinks:        *makeLinks,
+		IgnoreCert:       *ignoreCert,
+		DontWaitForTape:  *dontWaitForTape,
+		Endpoint:         paramOrEnv(*endpointParam, "DS3_ENDPOINT"),
+		AccessKey:        paramOrEnv(*accessKeyParam, "DS3_ACCESS_KEY"),
+		SecretKey:        paramOrEnv(*secretKeyParam, "DS3_SECRET_KEY"),
+		Proxy:            paramOrEnv(*proxyParam, "DS3_PROXY"),
+		OutputFile:       *outputFile,
+	}
 	// Validate required arguments.
 	switch {
 		case args.Command == "": return nil, errors.New("Must specify a command.")

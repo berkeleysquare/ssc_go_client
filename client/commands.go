@@ -14,6 +14,7 @@ var availableCommands = map[string]command {
     "create_test_file": CreateTestFile,
     "run_project_now": RunNow,
     "checksum_test_file": DoHash,
+    "directory_checksum": HashDirectory,
     "create_test_migrate": CreateTestMigrate,
     "create_test_restore": CreateTestRestore,
     "get_migrate_projects": ListMigrateProjects,
@@ -28,6 +29,28 @@ var availableCommands = map[string]command {
     "wait_for_placement": waitForPlacement,
     "head_object": headObject,
     "inventory": listBucketContents,
+}
+
+// commands require only filesystem or BlackPearl access, no ssc client required
+var noTokenRequired = map[string]bool {
+    "checksum_test_file": true,
+    "directory_checksum": true,
+    "physical_placement": true,
+    "wait_for_placement": true,
+    "head_object": true,
+    "inventory": true,
+}
+
+func CommandRequiresClientToken(args *Arguments) (bool, error) {
+    // make sure command exists
+    _, ok := availableCommands[args.Command]
+    if ok {
+        // return false if it is in noTokenRequired and true
+        noToken, inTable:= noTokenRequired[args.Command]
+        return !(noToken && inTable), nil
+    } else {
+        return false, fmt.Errorf("unsupported command: '%s'", args.Command)
+    }
 }
 
 func RunCommand(ssc *SscClient, args *Arguments) error {

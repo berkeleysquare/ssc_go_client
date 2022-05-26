@@ -51,10 +51,25 @@ First create a BlackPearl target storage location using the GUI
 or API. The test location will clone that to acquire credentials. 
 In the example, bp-sandbox is the location to be cloned.
 ```shell
-$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command full_verify --directory C:\\StorCycle\\verify --clone bp-sandbox
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command full_verify --directory C:\\StorCycle\\verify --clone bp-sandbox --endpoint http://10.85.41.36 --secret_key btkDKJBd --access_key ams=
 ```
 The full_cycle command will write status to the console at each task. 
 Steps which must wait for tasks to complete  will print a period (.) to the console each attempt.
+```shell
+$ ssc-cli.exe --command directory_checksum --directory C:\\StorCycle\\shares\\two --out shares_two.csv
+```
+
+### generate checksums
+Two commands generate crc64 checksums to match those tracked in StorCycle. To generate a checksum for a single file:
+```shell
+$ ssc-cli.exe --command checksum_test_file --file_name verify-test-file220526083234.txt --directory C:\\StorCycle\\verify\\verify-test-source  
+```
+
+To recurse an entire directory and output to a .csv file:
+```shell
+$ ssc-cli.exe --command directory_checksum --directory C:\\StorCycle\\shares\\two --out shares_two.csv
+```
+If --out is not specified, it will print to the console.
 
 ## Author
 
