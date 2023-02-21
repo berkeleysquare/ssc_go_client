@@ -5,6 +5,7 @@ import (
 	"flag"
 	"math"
 	"os"
+	"strings"
 )
 
 const TEST_USER = "Administrator"
@@ -12,6 +13,17 @@ const TEST_PASS = "spectra"
 const TEST_DOMAIN = ""
 const TEST_URL = "https://localhost/openapi"
 
+// accept a comma-delimited list of extensions; return as []string
+type stringArrayFlag []string
+
+func (s *stringArrayFlag) Set(in string) error {
+	*s = strings.Split(in, ",")
+	return nil
+}
+
+func (s *stringArrayFlag) String() string{
+	return strings.Join(*s, ",")
+}
 
 type Arguments struct {
 	Url string
@@ -19,6 +31,7 @@ type Arguments struct {
 	Bucket string
 	Job string
 	Name string
+	Tag string
 	FileName string
 	Domain string
 	Password string
@@ -30,6 +43,7 @@ type Arguments struct {
 	Clone string
 	ProjectName string
 	Prefix string
+	Extensions stringArrayFlag
 	Start, Count int
 	IgnoreCert bool
 	DontWaitForTape bool
@@ -37,12 +51,19 @@ type Arguments struct {
 	Endpoint, Proxy string
 	AccessKey, SecretKey string
 	OutputFile string
+	InputFile string
+	Verbose bool
+	LogFile string
 }
 
 func ParseArgs() (*Arguments, error) {
+	var ext stringArrayFlag
+	flag.Var(&ext, "ext", "comma-delimited list of file extension")
+
 	url := flag.String("url", TEST_URL, "Base REST endpoint path for StorCycle server")
 	name := flag.String("name", TEST_USER, "user name")
 	fileName := flag.String("file_name", "", "user name")
+	tag := flag.String("tag", "", "tag")
 	domain := flag.String("domain", TEST_DOMAIN, "domain")
 	password := flag.String("password", TEST_PASS, "user password")
 	command := flag.String("command", "", "command to execute; list_commands to list all")
@@ -65,7 +86,10 @@ func ParseArgs() (*Arguments, error) {
 	accessKeyParam := flag.String("access_key", "", "Specifies the access_key for the DS3 user.")
 	secretKeyParam := flag.String("secret_key", "", "Specifies the secret_key for the DS3 user.")
 	proxyParam := flag.String("proxy", "", "Specifies the HTTP proxy to route through.")
-	outputFile:= flag.String("out", "", "output file")
+	inputFile := flag.String("in", "", "input file")
+	outputFile := flag.String("out", "", "output file")
+	logFile := flag.String("log", "", "log file")
+	verbose := flag.Bool("verbose", false, "log output to console")
 	flag.Parse()
 
 	// Build the arguments object.
@@ -75,10 +99,12 @@ func ParseArgs() (*Arguments, error) {
 		Bucket:           *bucket,
 		Job:              *job,
 		Name:             *name,
+		Tag:              *tag,
 		FileName:         *fileName,
 		Password:         *password,
 		Domain:           *domain,
 		Prefix:           *prefix,
+		Extensions:       ext,
 		Directory:        *directory,
 		IncludeDirectory: *includeDirectory,
 		ExcludeDirectory: *excludeDirectory,
@@ -96,6 +122,9 @@ func ParseArgs() (*Arguments, error) {
 		SecretKey:        paramOrEnv(*secretKeyParam, "DS3_SECRET_KEY"),
 		Proxy:            paramOrEnv(*proxyParam, "DS3_PROXY"),
 		OutputFile:       *outputFile,
+		InputFile:     	  *inputFile,
+		Verbose:     	  *verbose,
+		LogFile:		  *logFile,
 	}
 	// Validate required arguments.
 	switch {
@@ -124,4 +153,3 @@ func paramOrEnv(param, envName string) string {
 	default: return ""
 	}
 }
-

@@ -1,0 +1,105 @@
+# StorCycle® Client and test utility
+
+## Overview
+This utility provides a CLI search/restore for Spectra Logic's StorCycle
+matching the directory or file name. 
+It will search for the string and filter results by file extensions. 
+Matching objects can be batched into restore projects by migrate job.
+
+NOTE: Search must be from the first character of a directory or file name. 
+Trailing wildcard is assumed but leading wildcards are not supported.
+
+## search_objects 
+- Search for all matching objects (--file_name parameter)
+- Filter by file extensions (--ext parameter: comma-delimited)
+- Output to csv (console or file name specified by --out parameter)
+
+## restore_objects 
+- Search for all matching objects (--file_name parameter)
+- Filter by file extensions (--ext parameter: comma-delimited)
+- Output to csv (only if file name specified by --out parameter)
+- Restore to original location (default) or specify --share (the name of a StorCycle Storage Location) and --directory (a subdirectory in the location -- will be created if not extant)
+- Create one Restore Project per migrate job
+- Run job now
+
+## Operation
+Unpack the executable onto a machine with network access to the StorCycle server.
+
+On Windows, A directory under C:\StorCycle is recommended, e.g., C:\StorCycle\verify
+
+Display available commands:
+```shell
+$ ssc-cli --command list_commands
+```
+
+Display available parameters:
+```shell
+$ ssc-cli --help
+```
+###Search example:
+```shell
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command search_objects --file_name picnic -ext mp4 
+```
+
+If --in is specified, it will read filenames from the CSV file
+(First column, second row). Else the search string must be specified as --file_name
+```shell
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command search_objects --in dir_list.csv -ext jpg,gif 
+```
+Include --verbose to write log output to the console. 
+Include --verbose and --log <logfile> to capture output to a file.
+
+###Restore example:
+```shell
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --file_name picnic -ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
+```
+Will output CSV only if --out is specified.
+
+Include --verbose to write log output to the console. 
+
+If --out is not specified, it will print to the console.
+
+If --in is specified, it will read filenames from the CSV file
+(First column, second row). Else the search string must be specified as --file_name
+```shell
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --in directory_list -ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
+```
+
+### Restore status
+All projects created have a tag of "Restore &lt;caseid&gt;" ("Restore" + space + the search/restore term).
+Jobs can be queried using this tag to check status
+```shell
+>> .\ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_jobs_by_tag --tag "Restore MonaLisa"  --verbose
+Job: Restore_MonaLisa__tuesdays+CHild-2_23-02-02-08-47-35.321-1, State: Completed, Complete: 100.00
+Job: Restore_MonaLisa__full-1_23-02-02-08-47-35.314-1, State: Active, Complete: 37.50
+```
+ 
+And a command can block until the jobs are complete.
+```shell
+>> .\ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command wait_for_restore_jobs_by_tag --tag "Restore MonaLisa"  --verbose
+2023/02/02 08:48:28 1 jobs not complete
+2023/02/02 08:49:23 1 jobs not complete
+Job: Restore_MonaLisa__tuesdays+CHild-2_23-02-02-08-47-35.321-1, State: Completed, Complete: 100.00
+Job: Restore_MonaLisa__full-1_23-02-02-08-47-35.314-1, State: Completed, Complete: 100.00
+```
+
+##Search and Restore Database Direct
+Accessing the database directly improves performances and enables full regEx search across the entire path. 
+
+NOTE: for security, db search/restore can only be run on the Storcycle Server.
+
+### Search DB
+Same syntax as search_objects, but the command is search_db:
+```shell
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command search_db --file_name picnic -ext mp4 
+```
+### Restore DB
+Same syntax as restore_objects, but the command is restore_db_objects:
+```shell
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_db_objects --file_name picnic -ext mp4 --share Restorey --directory /testAuto --out myFiles.csv
+```
+
+## Author
+
+developer@spectralogic.com
+

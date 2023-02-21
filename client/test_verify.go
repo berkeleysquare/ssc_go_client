@@ -3,7 +3,6 @@ package client
 import (
 	"errors"
 	"fmt"
-	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"io"
 	"os"
 	"path/filepath"
@@ -103,15 +102,6 @@ func CreateTestRestore(ssc *SscClient, args *Arguments) error {
 	return CreateRestoreProject(ssc, args)
 }
 
-func RunNow(ssc *SscClient, args *Arguments) error {
-	_, err := ssc.Client.ProjectApi.RunProjectNow(*ssc.Context, args.ProjectName)
-	if err == nil {
-		fmt.Printf("Successfully set Run Now for %s\n", args.ProjectName)
-		return nil
-	}
-	return fmt.Errorf("run now failed for project %s\n%v\n",  args.ProjectName, err)
-}
-
 func waitForRestore(restoreFile string) error {
 	fmt.Printf("Waiting for restore .")
 	return tryRestore(restoreFile, 0, 1)
@@ -134,23 +124,6 @@ func tryRestore(restoreFile string, fib1 int, fib2 int) error {
 	fib3 := staggeredWait(fib1, fib2)
 	// try again
 	return tryRestore(restoreFile, fib2, fib3)
-}
-
-func displayJobs(jobs openapi.ApiJobPaginator) error {
-	for jobIndex := range jobs.Data {
-		job := jobs.Data[jobIndex]
-		fmt.Printf("Job: %s, Description: %s\n", *job.Name, *job.Description)
-	}
-	return nil
-}
-
-func listJobs(ssc *SscClient, args *Arguments) error {
-	response, _, err := ssc.Client.ProjectApi.SearchJobs(*ssc.Context, args.ProjectName, nil)
-	if err != nil {
-		return fmt.Errorf("search jobs for project name %s failed %v\n", args.ProjectName, err)
-	}
-
-	return displayJobs(response)
 }
 
 func listLatestJob(ssc *SscClient, args *Arguments) error {

@@ -56,7 +56,22 @@ $ ssc-cli  --url https://localhost/openapi --name Administrator --password spect
 The full_cycle command will write status to the console at each task. 
 Steps which must wait for tasks to complete  will print a period (.) to the console each attempt.
 ```shell
-$ ssc-cli.exe --command directory_checksum --directory C:\\StorCycle\\shares\\two --out shares_two.csv
+Successfully created test file C:\StorCycle\verify\verify-test-source\verify-test-file220804122605.txt
+Successfully created checksum c9e40bae5d57b884 on file C:\StorCycle\verify\verify-test-source\verify-test-file220804122605.txt
+Successfully created source verify-test-source
+Successfully created target verify-test-target
+Successfully created archive project verify-test-migrate
+Waiting for placement on cache ..
+Target file StorCycle/verify/verify-test-source/verify-test-file220804122605.txt
+Latest job for verify-test-migrate is verify-test-migrate-1
+Waiting for physical placement on StorCycle/verify/verify-test-source/verify-test-file220804122605.txt .............
+On tape: 9fa81acd-22c8-4d37-ab0b-f951e830baf8, barcode: 027370M8
+Successfully created restore project verify-test-restore220804122605
+Waiting for restore ..
+Successfully created checksum c9e40bae5d57b884 on file C:\StorCycle\verify\verify-test-source\restore\verify-test-file220804122605.txt
+Verify succeeded
+Original checksum: c9e40bae5d57b884, final checksum: c9e40bae5d57b884
+
 ```
 
 ### generate checksums

@@ -20,6 +20,16 @@ var availableCommands = map[string]command {
     "get_migrate_projects": ListMigrateProjects,
     "get_restore_projects": ListRestoreProjects,
     "list_jobs": listJobs,
+    "get_job_status": GetJobStatus,
+    "get_all_jobs": GetAllJobs,
+    "get_all_restore_jobs": GetAllJobs,
+    "get_active_restore_jobs": GetAllJobs,
+    "restore_jobs_by_tag" : GetRestoreJobsByTag,
+    "active_restore_jobs_by_tag" : GetRestoreJobsByTag,
+    "wait_for_restore_jobs_by_tag" : WaitForRestoreJobsByTag,
+    "search_objects": executeSearch,
+    "restore_objects": executeSearch,
+    "get_catalog": listCatalog,
     "latest_job": listLatestJob,
     "get_scan_projects": ListScanProjects,
     "create_scan": CreateScanProject,
@@ -29,6 +39,8 @@ var availableCommands = map[string]command {
     "wait_for_placement": waitForPlacement,
     "head_object": headObject,
     "inventory": listBucketContents,
+    "search_db": executeDbSearch,
+    "restore_db_objects": executeDbSearch,
 }
 
 // commands require only filesystem or BlackPearl access, no ssc client required
