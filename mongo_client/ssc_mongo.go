@@ -43,7 +43,7 @@ func RunQuery(id string, exts []string) ([]*SearchObject, error) {
 		return nil, fmt.Errorf("runQuery() failed, %v", err)
 	}
 	objects := GetCollection(FILE_COLLECTION, *mongoClient)
-	results, err := queryPath(objects, id, exts[0])
+	results, err := queryPath(objects, id, exts)
 	if err != nil {
 		return nil, fmt.Errorf("runQuery() failed to execute query, %v", err)
 	}

@@ -113,12 +113,12 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 		return nil, fmt.Errorf("no match string specified" )
 	}
 	if verbose {
-		log.Printf("SearchObjects(%s, %s)", FileName, exts[0])
+		log.Printf("SearchObjects(%s, %s)", FileName, exts)
 	}
 
 	response, err := mongo_client.RunQuery(FileName, exts)
 	if err != nil {
-		return nil, fmt.Errorf("search objects for match %s ext %s failed %v\n", FileName, exts[0], err)
+		return nil, fmt.Errorf("search objects for match %s ext %s failed %v\n", FileName, exts, err)
 	}
 
 

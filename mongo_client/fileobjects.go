@@ -29,7 +29,17 @@ func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 	return w.WriteAll(lines)
 }
 
-func queryPath(collection *mongo.Collection, name string, ext string) ([]*SearchObject, error) {
+func queryPath(collection *mongo.Collection, name string, exts []string) ([]*SearchObject, error) {
+
+	var extsBson bson.A
+	for _, ext := range exts {
+		extsBson = append(extsBson, bson.D{{"componentpath", primitive.Regex{Pattern: "[.]" + ext + "$", Options: "i"}}})
+	}
+	if len(exts) == 0 {
+		// match any -- will inquire about desired behavior
+		extsBson = append(extsBson, bson.D{{"componentpath", primitive.Regex{Pattern: ".$", Options: "i"}}})
+	}
+
 	filter := bson.A{
 		bson.D{
 			{"$match",
@@ -37,7 +47,9 @@ func queryPath(collection *mongo.Collection, name string, ext string) ([]*Search
 					{"$and",
 						bson.A{
 							bson.D{{"componentpath", primitive.Regex{Pattern: name, Options: "i"}}},
-							bson.D{{"componentpath", primitive.Regex{Pattern: ext + "$", Options: "i"}}},
+							bson.D{
+								{"$or", extsBson},
+							},
 							bson.D{
 								{"manifest",
 									bson.D{
