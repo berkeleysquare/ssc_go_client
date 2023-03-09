@@ -20,6 +20,8 @@ var availableCommands = map[string]command {
     "get_migrate_projects": ListMigrateProjects,
     "get_restore_projects": ListRestoreProjects,
     "list_jobs": listJobs,
+    "restore_all_jobs": restoreAllJobs,
+    "list_all_jobs": restoreAllJobs,
     "get_job_status": GetJobStatus,
     "get_all_jobs": GetAllJobs,
     "get_all_restore_jobs": GetAllJobs,

@@ -65,6 +65,40 @@ func listJobs(ssc *SscClient, args *Arguments) error {
 	return displayJobs(response)
 }
 
+func makeProjectName(manifest string) string {
+	return "Restore_" + manifest
+}
+
+func restoreAllJobs(ssc *SscClient, args *Arguments) error {
+	response, _, err := ssc.Client.ProjectApi.SearchJobs(*ssc.Context, args.ProjectName, nil)
+	if err != nil {
+		return fmt.Errorf("search jobs for project name %s failed %v\n", args.ProjectName, err)
+	}
+
+	if args.Command != "restore_all_jobs" {
+		return displayJobs(response)
+	}
+
+	for jobIndex := range response.Data {
+		job := response.Data[jobIndex]
+
+		// any files in manifest?
+		manifest, _, err := doGetManifest(ssc, *job.Name, 0, args.Verbose)
+		if err != nil {
+			return fmt.Errorf("get manifest %s failed %v\n", *job.Name, err)
+		}
+		if len(manifest) > 0 {
+			_, err = doCreateRestoreProject(ssc, *job.Name, makeProjectName(*job.Name), args)
+			if err != nil {
+				log.Printf("create restore for job %s failed %v\n", *job.Name, err)
+			}
+		} else {
+			log.Printf("Job: %s has no objects\n", *job.Name)
+		}
+	}
+	return nil
+}
+
 func GetJobStatus(ssc *SscClient, args *Arguments) error {
 	response, _, err := ssc.Client.ProjectApi.GetJobStatus(*ssc.Context, args.Job)
 	if err != nil {

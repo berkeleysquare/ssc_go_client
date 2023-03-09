@@ -33,16 +33,29 @@ func ListRestoreProjects(ssc *SscClient, args *Arguments) error {
 
 func CreateRestoreProject(ssc *SscClient, args *Arguments) error {
 
-	// create and run a Scan Project for "share"
-	if len(args.Share) == 0 {
-		return fmt.Errorf("no share specified in create_restore" )
-	}
 	if len(args.Job) == 0 {
 		return fmt.Errorf("no job/manifest specified in create_restore" )
 	}
 	projectName := args.ProjectName
 	if len(projectName) == 0 {
 		projectName = fmt.Sprintf("Restore_%s%s", args.Share, strings.Replace(args.Directory, "\\", "_", -1))
+	}
+	newProjectName, err := doCreateRestoreProject(ssc, args.Job, projectName, args)
+	if err != nil {
+		return fmt.Errorf("failed to create restore project for manifest %s %v\n", args.Job, err)
+	}
+	log.Printf("Successfully created restore project %s\n", *newProjectName)
+	return nil
+}
+
+func doCreateRestoreProject(ssc *SscClient, manifest string, projectName string, args *Arguments) (*string, error) {
+
+	// create and run a Scan Project for "share"
+	if len(args.Share) == 0 {
+		return nil, fmt.Errorf("no share specified in create_restore" )
+	}
+	if len(manifest) == 0 {
+		return nil, fmt.Errorf("no job/manifest specified in create_restore" )
 	}
 	policyType := "Restore"
 	breadCrumbAction := ""
@@ -72,7 +85,7 @@ func CreateRestoreProject(ssc *SscClient, args *Arguments) error {
 		Tags:             &tags,
 		Schedule:         *NowSchedule(),
 		ProjectType:	  &policyType,
-		RestoreManifest:  &args.Job,
+		RestoreManifest:  &manifest,
 	}
 	if len(breadCrumbAction) > 0 {
 		restoreDefinition.BreadCrumbAction = &breadCrumbAction
@@ -80,10 +93,12 @@ func CreateRestoreProject(ssc *SscClient, args *Arguments) error {
 
 	restore, resp, err := ssc.Client.ProjectApi.UpdateRestoreProject(*ssc.Context, projectName, *restoreDefinition)
 	if err != nil {
-		return fmt.Errorf("failed to create/update restore (%d) %v\n", resp.StatusCode, ExpandOpenApiErr(err))
+		return nil, fmt.Errorf("failed to create/update restore (%d) %v\n", resp.StatusCode, ExpandOpenApiErr(err))
 	}
-	log.Printf("Successfully created restore project %s\n", *restore.Status.Name)
-	return nil
+	if args.Verbose {
+		log.Printf("Successfully created restore project %s\n", *restore.Status.Name)
+	}
+	return restore.Status.Name, nil
 }
 
 func CreateSpecificFilesRestoreProject(ssc *SscClient, share string, fileName string, job string, directory string, fileList *[]string) error {
