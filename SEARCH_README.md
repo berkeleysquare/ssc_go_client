@@ -98,6 +98,8 @@ Same syntax as restore_objects, but the command is restore_db_objects:
 ```shell
 $ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_db_objects --file_name picnic -ext mp4 --share Restorey --directory /testAuto --out myFiles.csv
 ```
+NOTE: --ext * or not imncluding the --ext parameter will return all that match the file name string 
+on the search_db amd restore_db_objects commands.
 
 ## Author
 

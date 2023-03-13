@@ -32,12 +32,13 @@ func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 func queryPath(collection *mongo.Collection, name string, exts []string) ([]*SearchObject, error) {
 
 	var extsBson bson.A
-	for _, ext := range exts {
-		extsBson = append(extsBson, bson.D{{"componentpath", primitive.Regex{Pattern: "[.]" + ext + "$", Options: "i"}}})
-	}
-	if len(exts) == 0 {
+	if len(exts) == 0 || exts[0] == "*"{
 		// match any -- will inquire about desired behavior
 		extsBson = append(extsBson, bson.D{{"componentpath", primitive.Regex{Pattern: ".$", Options: "i"}}})
+	} else {
+		for _, ext := range exts {
+			extsBson = append(extsBson, bson.D{{"componentpath", primitive.Regex{Pattern: "[.]" + ext + "$", Options: "i"}}})
+		}
 	}
 
 	filter := bson.A{
