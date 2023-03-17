@@ -3,16 +3,21 @@ package mongo_client
 import (
 	"context"
 	"encoding/csv"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strconv"
 	"time"
 )
 
 type SearchObject struct {
 	Name 		string 	`json:"name" bson:"_id"`
-	Manifest  	string 	`json:"manifest"`
+	Path 		string 	`json:"relativepath" bson:"relativepath"`
+	Manifest  	string 	`json:"manifest" bson:"manifest"`
+	Size	  	int 	`json:"filesize" bson:"filesize"`
+	Checksum  	string 	`json:"hash" bson:"hash"`
 }
 
 var (
@@ -24,10 +29,11 @@ func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 	lines := [][]string{}
 	for fileIndex := range files {
 		file := files[fileIndex]
-		lines = append(lines, []string {file.Name, file.Manifest})
+		lines = append(lines, []string {file.Name, file.Manifest, strconv.Itoa(file.Size), file.Checksum})
 	}
 	return w.WriteAll(lines)
 }
+
 
 func queryPath(collection *mongo.Collection, name string, exts []string) ([]*SearchObject, error) {
 
@@ -73,6 +79,8 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 				bson.D{
 					{"_id", 1},
 					{"manifest", 1},
+					{"filesize", 1},
+					{"hash", 1},
 				},
 			},
 		},
@@ -99,4 +107,63 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 
 	return ret, nil
 }
+
+func queryProject(collection *mongo.Collection, project string) ([]*SearchObject, error) {
+
+// 			{"$match", bson.D{{"manifest", primitive.Regex{Pattern: project + "-[0-9]*$"}}}}},
+
+	filter := bson.A{
+		bson.D{{"$match", bson.D{{"manifest", primitive.Regex{Pattern: "Sourcy-[0-9]*$"}}}}},
+		bson.D{
+			{"$addFields",
+				bson.D{
+					{"relativepath",
+						bson.D{
+							{"$substrCP",
+								bson.A{
+									"$_id",
+									bson.D{
+										{"$add",
+											bson.A{
+												bson.D{{"$strLenCP", "$locationpath"}},
+												1,
+											},
+										},
+									},
+									bson.D{{"$strLenCP", "$_id"}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		bson.D{
+			{"$project",
+				bson.D{
+					{"_id", 1},
+					{"relativepath", 1},
+					{"manifest", 1},
+					{"filesize", 1},
+					{"hash", 1},
+				},
+			},
+		},
+	}
+
+	aggOptions := options.AggregateOptions{}
+	aggOptions.MaxTime = &timeout
+
+	var ret []*SearchObject
+	cur, err := collection.Aggregate(context.TODO(), filter, &aggOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cur.All(context.TODO(), &ret); err != nil {
+		return nil, fmt.Errorf("could not marshall results in queryProject(%s) %v", project, err)
+	}
+	return ret, nil
+}
+
 

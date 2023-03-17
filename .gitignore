@@ -1,0 +1,15 @@
+#  binary
+ssc-cli
+
+# Mac finder garbage
+.DS_Store
+
+*.exe
+*.sh
+*.csv
+*.log
+
+# IntelliJ
+.idea
+.iml
+*.iml
