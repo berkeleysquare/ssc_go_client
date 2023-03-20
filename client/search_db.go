@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	objects_per_page = 100000
+	objects_per_page = 500000
 )
 
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
