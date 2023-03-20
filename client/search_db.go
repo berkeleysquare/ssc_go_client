@@ -12,6 +12,10 @@ import (
 	"strconv"
 )
 
+const (
+	objects_per_page = 100000
+)
+
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
 
 	var fileNames []string
@@ -157,25 +161,31 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 		}
 	}
 
-	ret, err := doDbProjectSearch(ssc, project, verbose)
-	if err != nil {
-		return fmt.Errorf("search db for project %s failed %v\n", project, err)
-	}
+	more := true
+	offset := 0
+	for more {
+		ret, err := doDbProjectSearch(ssc, project, offset, objects_per_page, verbose)
+		if err != nil {
+			return fmt.Errorf("search db for project %s failed %v\n", project, err)
+		}
 
-	if verify {
-		// check that all files exist on share
-		err = verifyFilesExist(w, ret, path)
-		if err != nil {
-			return fmt.Errorf("verify project %s on path %s failed %v\n", project, path, err)
+		if verify {
+			// check that all files exist on share
+			err = verifyFilesExist(w, ret, path)
+			if err != nil {
+				return fmt.Errorf("verify project %s on path %s failed %v\n", project, path, err)
+			}
+		} else if writeOutput {
+			err = mongo_client.DisplaySearchObjects(w, ret)
+			if err != nil {
+				return fmt.Errorf("could not list db search results %v\n", err)
+			}
+			if verbose && 	len(args.OutputFile) > 0 {
+				log.Printf("Results written to %s", args.OutputFile)
+			}
 		}
-	} else if writeOutput {
-		err = mongo_client.DisplaySearchObjects(w, ret)
-		if err != nil {
-			return fmt.Errorf("could not list db search results %v\n", err)
-		}
-		if verbose && 	len(args.OutputFile) > 0 {
-			log.Printf("Results written to %s", args.OutputFile)
-		}
+		offset += objects_per_page
+		more = objects_per_page == len(ret)
 	}
 
 	log.Printf("Successfully ran Command\n",)
@@ -209,10 +219,10 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 	return response, nil
 }
 
-func doDbProjectSearch(ssc *SscClient, project string, verbose bool) ([]*mongo_client.SearchObject, error) {
+func doDbProjectSearch(ssc *SscClient, project string, offset int, limit int, verbose bool) ([]*mongo_client.SearchObject, error) {
 
 	if verbose {
-		log.Printf("doDbProjectSearch(%s)", project)
+		log.Printf("doDbProjectSearch(%s, %d, %d)", project, offset, limit)
 	}
 
 	// search for all files including case number
@@ -223,7 +233,7 @@ func doDbProjectSearch(ssc *SscClient, project string, verbose bool) ([]*mongo_c
 		log.Printf("SearchObjects(%s)", project)
 	}
 
-	response, err := mongo_client.RunProjectQuery(project)
+	response, err := mongo_client.RunProjectQuery(project, offset, limit)
 	if err != nil {
 		return nil, fmt.Errorf("search objects for project %s failed %v\n", project, err)
 	}

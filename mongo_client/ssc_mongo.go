@@ -50,13 +50,13 @@ func RunQuery(id string, exts []string) ([]*SearchObject, error) {
 	return results, nil
 }
 
-func RunProjectQuery(project string) ([]*SearchObject, error) {
+func RunProjectQuery(project string, offset int, limit int) ([]*SearchObject, error) {
 	mongoClient, err := Connect()
 	if err != nil {
 		return nil, fmt.Errorf("runQuery() failed, %v", err)
 	}
 	objects := GetCollection(FILE_COLLECTION, *mongoClient)
-	results, err := queryProject(objects, project)
+	results, err := queryProject(objects, project, offset, limit)
 	if err != nil {
 		return nil, fmt.Errorf("runProjectQuery() failed to execute query, %v", err)
 	}

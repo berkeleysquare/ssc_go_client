@@ -108,7 +108,7 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 	return ret, nil
 }
 
-func queryProject(collection *mongo.Collection, project string) ([]*SearchObject, error) {
+func queryProject(collection *mongo.Collection, project string, offset int, limit int) ([]*SearchObject, error) {
 
 	filter := bson.A{
 		bson.D{{"$match", bson.D{{"manifest", primitive.Regex{Pattern: "^" + project + "-[0-9]*$"}}}}},
@@ -147,6 +147,9 @@ func queryProject(collection *mongo.Collection, project string) ([]*SearchObject
 				},
 			},
 		},
+		bson.D{{"$skip", offset}},
+		bson.D{{"$limit", limit}},
+
 	}
 
 	aggOptions := options.AggregateOptions{}
