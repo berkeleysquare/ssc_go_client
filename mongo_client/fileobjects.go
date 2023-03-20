@@ -110,10 +110,8 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 
 func queryProject(collection *mongo.Collection, project string) ([]*SearchObject, error) {
 
-// 			{"$match", bson.D{{"manifest", primitive.Regex{Pattern: project + "-[0-9]*$"}}}}},
-
 	filter := bson.A{
-		bson.D{{"$match", bson.D{{"manifest", primitive.Regex{Pattern: "Sourcy-[0-9]*$"}}}}},
+		bson.D{{"$match", bson.D{{"manifest", primitive.Regex{Pattern: project + "-[0-9]*$"}}}}},
 		bson.D{
 			{"$addFields",
 				bson.D{
