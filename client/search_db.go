@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -123,8 +124,8 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 		log.Printf("execute command %s on project %s", args.Command, project)
 	}
 	if verify {
-		if len(share) == 0 && len(args.Directory) == 0 {
-			return fmt.Errorf("must specified share and/or directory")
+		if len(share) == 0  {
+			return fmt.Errorf("must specify share (location where files were restored)")
 		}
 		location, _, err := getStorageLocation(ssc, share)
 		if err != nil {
@@ -138,35 +139,34 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 
 	// output -- console, csv file, or none
 	var w *csv.Writer
+	var f *os.File
 	outputFile := args.OutputFile
-	writeOutput := len(outputFile) > 0
 
-	if writeOutput {
-		// list search results
-		wOut := os.Stdout
-		if len(outputFile) > 0 {
-			f, err := os.Create(outputFile)
-			if err != nil {
-				return fmt.Errorf("Could not create %s\n%v\n", outputFile, err)
-			}
-			defer f.Close()
-			wOut = f
-		}
-		w = csv.NewWriter(wOut)
-		defer w.Flush()
-
-		err := PrintSearchCsvHeader(w)
-		if err != nil {
-			return fmt.Errorf("could not print db search results header %v", err)
-		}
-	}
-
+	// set up pagination
 	more := true
 	offset := 0
 	for more {
+		// grab a page of data
 		ret, err := doDbProjectSearch(ssc, project, offset, objects_per_page, verbose)
 		if err != nil {
 			return fmt.Errorf("search db for project %s failed %v\n", project, err)
+		}
+
+		// open a new file for each page (Excel limits rows to 1,024,000)
+		wOut := os.Stdout
+		if len(outputFile) > 0 {
+			outputFile = makeOutputFileName(args.OutputFile, offset)
+			f, err = os.Create(outputFile)
+			if err != nil {
+				return fmt.Errorf("Could not create %s\n%v\n", outputFile, err)
+			}
+			wOut = f
+		}
+		w = csv.NewWriter(wOut)
+
+		err = PrintSearchCsvHeader(w)
+		if err != nil {
+			return fmt.Errorf("could not print db search results header %v", err)
 		}
 
 		if verify {
@@ -175,17 +175,24 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 			if err != nil {
 				return fmt.Errorf("verify project %s on path %s failed %v\n", project, path, err)
 			}
-		} else if writeOutput {
+		} else {
 			err = mongo_client.DisplaySearchObjects(w, ret)
 			if err != nil {
 				return fmt.Errorf("could not list db search results %v\n", err)
 			}
-			if verbose && 	len(args.OutputFile) > 0 {
-				log.Printf("Results written to %s", args.OutputFile)
-			}
+		}
+		if verbose && len(outputFile) > 0 {
+			log.Printf("Results written to %s", outputFile)
 		}
 		offset += objects_per_page
 		more = objects_per_page == len(ret)
+		w.Flush()
+		if len(outputFile) > 0 {
+			err = f.Close()
+			if err != nil {
+				return fmt.Errorf("could not close output file %s %v\n", outputFile, err)
+			}
+		}
 	}
 
 	log.Printf("Successfully ran Command\n",)
@@ -230,7 +237,7 @@ func doDbProjectSearch(ssc *SscClient, project string, offset int, limit int, ve
 		return nil, fmt.Errorf("no project name specified" )
 	}
 	if verbose {
-		log.Printf("SearchObjects(%s)", project)
+		log.Printf("SearchProjectObjects(%s)", project)
 	}
 
 	response, err := mongo_client.RunProjectQuery(project, offset, limit)
@@ -284,10 +291,19 @@ func verifyFileExist(fullpath string) string {
 	_, err := os.Stat(fullpath)
 	if err == nil {
 		return "OK"
+
 	}
 	// not there, keep waiting
 	if errors.Is(err, os.ErrNotExist) {
 		return "ERROR -- not exist"
 	}
 	return "ERROR -- could not stat"
+}
+
+func makeOutputFileName(name string, start int) string {
+	ret := strings.TrimSuffix(name, ".csv")
+	if start > 0 {
+		ret = ret + "_" + strconv.Itoa(start)
+	}
+	return ret + ".csv"
 }
