@@ -61,7 +61,7 @@ Include --jobToPath to append manifest name to share path.
 
 If --out is not specified, it will print to the console.
 
-NOTE: files will be written to csv in batches of 500,000; additional pages will be named with the offset:
+NOTE: files will be written to csv in batches of 500,000 (can be overwritten with --count parameter); additional pages will be named with the offset:
 ```
 searchOutput.csv
 searchOutput_500000.csv

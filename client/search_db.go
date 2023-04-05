@@ -7,6 +7,7 @@ import (
 	"github.com/SpectraLogic/ssc_go_client/mongo_client"
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -121,6 +122,10 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 	// assert prints only error files -- verify prints all (with status)
 	assert := args.Command == "assert_db_project"
 	verify := assert || args.Command == "verify_db_project"
+	pageSize := objects_per_page
+	if args.Count < math.MaxInt {
+		pageSize = args.Count
+	}
 
 	var err error
 	var projectNames []string
@@ -171,7 +176,7 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 		offset := 0
 		for more {
 			// grab a page of data
-			ret, err := doDbProjectSearch(ssc, project, offset, objects_per_page, verbose)
+			ret, err := doDbProjectSearch(ssc, project, offset, pageSize, verbose)
 			if err != nil {
 				return fmt.Errorf("search db for project %s failed %v\n", project, err)
 			}
@@ -208,8 +213,8 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 			if verbose && len(outputFile) > 0 {
 				log.Printf("Results written to %s", outputFile)
 			}
-			offset += objects_per_page
-			more = objects_per_page == len(ret)
+			offset += pageSize
+			more = pageSize == len(ret)
 			w.Flush()
 			if len(outputFile) > 0 {
 				err = f.Close()
