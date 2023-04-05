@@ -1,10 +1,12 @@
 package client
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"github.com/antihax/optional"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -13,15 +15,45 @@ func getProjects(ssc *SscClient, opts *openapi.ProjectApiListProjectsOpts) (open
 	return ssc.Client.ProjectApi.ListProjects(*ssc.Context, opts)
 }
 
-func displayMigrateProjects(projects openapi.ApiProjectPaginator) error {
-	for projectIndex := range projects.Data {
-		project := projects.Data[projectIndex]
-		fmt.Printf("Project: %s, Share: %s, Targets: %v\n", *project.Status.Name, *project.Share, *project.Targets)
-	}
-	return nil
+func PrintMigrateProjectsHeader(w *csv.Writer) error {
+	var line = []string {"Project","Share","Targets"}
+	return w.Write(line)
 }
 
+func displayMigrateProjects(w *csv.Writer, projects openapi.ApiProjectPaginator) error {
+	lines := [][]string{}
+	for projectIndex := range projects.Data {
+		project := projects.Data[projectIndex]
+		lines = append(lines, []string{*project.Status.Name, *project.Share, strings.Join(*project.Targets, ",")})
+	}
+	return w.WriteAll(lines)
+}
+
+
 func ListMigrateProjects(ssc *SscClient, args *Arguments) error {
+
+	// output -- console, csv file, or none
+	var w *csv.Writer
+	outputFile := args.OutputFile
+
+	// list search results
+	wOut := os.Stdout
+	if len(outputFile) > 0 {
+		f, err := os.Create(outputFile)
+		if err != nil {
+			return fmt.Errorf("Could not create %s\n%v\n", outputFile, err)
+		}
+		defer f.Close()
+		wOut = f
+	}
+	w = csv.NewWriter(wOut)
+	defer w.Flush()
+
+	err := PrintMigrateProjectsHeader(w)
+	if err != nil {
+		return fmt.Errorf("could not print migrate projects header %v", err)
+	}
+
 	opts := &openapi.ProjectApiListProjectsOpts{
 		Skip:		optional.NewInt64(int64(args.Start)),
 		Limit:		optional.NewInt64(int64(args.Count)),
@@ -32,7 +64,7 @@ func ListMigrateProjects(ssc *SscClient, args *Arguments) error {
 	if err != nil {
 		return fmt.Errorf("could not retrieve projects (%d) %v\n", resp.StatusCode, err)
 	}
-	return displayMigrateProjects(projects)
+	return displayMigrateProjects(w, projects)
 }
 
 func CreateMigrateProject(ssc *SscClient, args *Arguments) error {

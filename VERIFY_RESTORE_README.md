@@ -5,6 +5,15 @@ This utility provides a CLI to interact with the StorCycle REST interface and
 to interact directly with the underlying database. All commands requiring db access
 (have db in the name) must be run on the StorCyle server.
 
+If --in is specified, it will read filenames from the CSV file
+(First column, second row). Else the project must be specified as --project_name
+
+This file can be the output of the get_migrate_projects command:
+``` shell
+--url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command get_migrate_projects --out projectList.csv
+```
+
+
 ## search_db_project
 - Search for all objects in all jobs of project (--project_name parameter)
 - Output to csv (console or file name specified by --out parameter)
@@ -13,6 +22,11 @@ to interact directly with the underlying database. All commands requiring db acc
 - Search for all objects in all jobs of project (--project_name parameter)
 - Verify that object exists (has been restored to) a source (--share parameter) and directory (--directory parameter)
 - Output to csv (console or file name specified by --out parameter)
+
+## assert_db_project
+- Search for all objects in all jobs of project (--project_name parameter)
+- Verify that object exists (has been restored to) a source (--share parameter) and directory (--directory parameter)
+- Output to csv ONLY IF FILE IS NOT FOUND (console or file name specified by --out parameter)
 
 ## Operation
 Unpack the executable onto a machine with network access to the StorCycle server.
@@ -38,9 +52,12 @@ $ ./ssc-cli --name Administrator --password spectra --verbose  --ignore_cert  --
 ```
 ### Verify db example:
 ```shell
-$ ./ssc-cli --name Administrator --password spectra --verbose  --ignore_cert  --command verify_db_project --project_name picnic --share shareOne --directory restore --out verifyObjects.csv
+$ ./ssc-cli --name Administrator --password spectra --verbose  --ignore_cert  --command verify_db_project --in projectList.csv --share shareOne --directory restore --out verifyObjects.csv
 ```
 Include --verbose to write log output to the console. 
+
+Include --jobToPath to append manifest name to share path.
+(If --directory is specified, it will appear after share path and job name).
 
 If --out is not specified, it will print to the console.
 

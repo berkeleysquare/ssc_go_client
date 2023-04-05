@@ -42,6 +42,7 @@ var availableCommands = map[string]command {
     "search_db": executeDbSearch,
     "search_db_project": executeDbProjectSearch,
     "verify_db_project": executeDbProjectSearch,
+    "assert_db_project": executeDbProjectSearch,
     "restore_db_objects": executeDbSearch,
 }
 

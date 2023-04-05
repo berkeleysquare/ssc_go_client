@@ -1,23 +1,54 @@
 package client
 
 import (
+	"encoding/csv"
 	"fmt"
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"github.com/antihax/optional"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
 
-func displayRestoreProjects(projects openapi.ApiProjectPaginator) error {
+func PrintRestoreProjectsHeader(w *csv.Writer) error {
+	var line = []string {"Project","Share","Manifest"}
+	return w.Write(line)
+}
+
+func displayRestoreProjects(w *csv.Writer, projects openapi.ApiProjectPaginator) error {
+	lines := [][]string{}
 	for projectIndex := range projects.Data {
 		project := projects.Data[projectIndex]
-		fmt.Printf("Project: %s, Share: %s, Manifest: %s\n", *project.Status.Name, *project.Share, *project.RestoreManifest)
+		lines = append(lines, []string{*project.Status.Name, *project.Share, *project.RestoreManifest})
 	}
-	return nil
+	return w.WriteAll(lines)
 }
 
 func ListRestoreProjects(ssc *SscClient, args *Arguments) error {
+
+	// output -- console, csv file, or none
+	var w *csv.Writer
+	outputFile := args.OutputFile
+
+	// list search results
+	wOut := os.Stdout
+	if len(outputFile) > 0 {
+		f, err := os.Create(outputFile)
+		if err != nil {
+			return fmt.Errorf("Could not create restore projects file %s\n%v\n", outputFile, err)
+		}
+		defer f.Close()
+		wOut = f
+	}
+	w = csv.NewWriter(wOut)
+	defer w.Flush()
+
+	err := PrintRestoreProjectsHeader(w)
+	if err != nil {
+		return fmt.Errorf("could not print restore projects header %v", err)
+	}
+
 	opts := &openapi.ProjectApiListProjectsOpts{
 		Skip:		optional.NewInt64(int64(args.Start)),
 		Limit:		optional.NewInt64(int64(args.Count)),
@@ -28,7 +59,7 @@ func ListRestoreProjects(ssc *SscClient, args *Arguments) error {
 	if err != nil {
 		return fmt.Errorf("could not retrieve projects (%d) %v\n", resp.StatusCode, ExpandOpenApiErr(err))
 	}
-	return displayRestoreProjects(projects)
+	return displayRestoreProjects(w, projects)
 }
 
 func CreateRestoreProject(ssc *SscClient, args *Arguments) error {

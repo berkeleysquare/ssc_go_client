@@ -54,6 +54,7 @@ type Arguments struct {
 	InputFile string
 	Verbose bool
 	LogFile string
+	JobToPath bool
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -90,6 +91,7 @@ func ParseArgs() (*Arguments, error) {
 	outputFile := flag.String("out", "", "output file")
 	logFile := flag.String("log", "", "log file")
 	verbose := flag.Bool("verbose", false, "log output to console")
+	jobToPath := flag.Bool("jobToPath", false, "append manifest name to path")
 	flag.Parse()
 
 	// Build the arguments object.
@@ -125,6 +127,7 @@ func ParseArgs() (*Arguments, error) {
 		InputFile:     	  *inputFile,
 		Verbose:     	  *verbose,
 		LogFile:		  *logFile,
+		JobToPath:		  *jobToPath,
 	}
 	// Validate required arguments.
 	switch {

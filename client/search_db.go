@@ -15,6 +15,9 @@ import (
 
 const (
 	objects_per_page = 500000
+	FILE_OK = "OK"
+	FILE_MISSONG = "ERROR -- not exist"
+	FILE_STAT_ERROR = "ERROR -- could not stat"
 )
 
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
@@ -112,85 +115,107 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 
 	verbose := args.Verbose
-	project := args.ProjectName
+	projectName := args.ProjectName
 	share := args.Share
 	path := ""
-	verify := args.Command == "verify_db_project"
+	// assert prints only error files -- verify prints all (with status)
+	assert := args.Command == "assert_db_project"
+	verify := assert || args.Command == "verify_db_project"
 
-	if len(project) == 0 {
-		return fmt.Errorf("no project specified")
-	}
-	if verbose {
-		log.Printf("execute command %s on project %s", args.Command, project)
-	}
-	if verify {
-		if len(share) == 0  {
-			return fmt.Errorf("must specify share (location where files were restored)")
-		}
-		location, _, err := getStorageLocation(ssc, share)
+	var err error
+	var projectNames []string
+
+	// fileName runs once, inputFile iterates through CSV
+	if len(projectName) > 0 {
+		projectNames = []string{projectName}
+	} else if len(args.InputFile) > 0 {
+		projectNames, err = loadFilenames(args.InputFile)
 		if err != nil {
-			return fmt.Errorf("could not get information about share %s\n%v", share, err)
+			return fmt.Errorf("could not load project names from %s %v\n", args.InputFile, err)
 		}
-		path = filepath.Join(*location.Path, args.Directory)
+	} else {
+		return fmt.Errorf("no project name or input file specified" )
+	}
+
+
+	for projectNameIndex := range projectNames {
+		project := projectNames[projectNameIndex]
+
 		if verbose {
-			log.Printf("verify to path %s", path)
+			log.Printf("execute command %s on project %s", args.Command, project)
 		}
-	}
-
-	// output -- console, csv file, or none
-	var w *csv.Writer
-	var f *os.File
-	outputFile := args.OutputFile
-
-	// set up pagination
-	more := true
-	offset := 0
-	for more {
-		// grab a page of data
-		ret, err := doDbProjectSearch(ssc, project, offset, objects_per_page, verbose)
-		if err != nil {
-			return fmt.Errorf("search db for project %s failed %v\n", project, err)
-		}
-
-		// open a new file for each page (Excel limits rows to 1,024,000)
-		wOut := os.Stdout
-		if len(outputFile) > 0 {
-			outputFile = makeOutputFileName(args.OutputFile, offset)
-			f, err = os.Create(outputFile)
-			if err != nil {
-				return fmt.Errorf("Could not create %s\n%v\n", outputFile, err)
-			}
-			wOut = f
-		}
-		w = csv.NewWriter(wOut)
-
-		err = PrintSearchCsvHeader(w)
-		if err != nil {
-			return fmt.Errorf("could not print db search results header %v", err)
-		}
-
 		if verify {
-			// check that all files exist on share
-			err = verifyFilesExist(w, ret, path)
-			if err != nil {
-				return fmt.Errorf("verify project %s on path %s failed %v\n", project, path, err)
+			if len(share) == 0 {
+				return fmt.Errorf("must specify share (location where files were restored)")
 			}
-		} else {
-			err = mongo_client.DisplaySearchObjects(w, ret)
+			location, _, err := getStorageLocation(ssc, share)
 			if err != nil {
-				return fmt.Errorf("could not list db search results %v\n", err)
+				return fmt.Errorf("could not get information about share %s\n%v", share, err)
+			}
+			path = filepath.Join(*location.Path, args.Directory)
+			if verbose {
+				log.Printf("verify to path %s", path)
+				if args.JobToPath {
+					log.Printf("Job name (manifest) will be appended to share path")
+				}
 			}
 		}
-		if verbose && len(outputFile) > 0 {
-			log.Printf("Results written to %s", outputFile)
-		}
-		offset += objects_per_page
-		more = objects_per_page == len(ret)
-		w.Flush()
-		if len(outputFile) > 0 {
-			err = f.Close()
+
+		// output -- console, csv file, or none
+		var w *csv.Writer
+		var f *os.File
+		outputFile := args.OutputFile
+
+		// set up pagination
+		more := true
+		offset := 0
+		for more {
+			// grab a page of data
+			ret, err := doDbProjectSearch(ssc, project, offset, objects_per_page, verbose)
 			if err != nil {
-				return fmt.Errorf("could not close output file %s %v\n", outputFile, err)
+				return fmt.Errorf("search db for project %s failed %v\n", project, err)
+			}
+
+			// open a new file for each page (Excel limits rows to 1,024,000)
+			wOut := os.Stdout
+			if len(outputFile) > 0 {
+				outputFile = makeOutputFileName(args.OutputFile, project, offset)
+				f, err = os.Create(outputFile)
+				if err != nil {
+					return fmt.Errorf("Could not create %s\n%v\n", outputFile, err)
+				}
+				wOut = f
+			}
+			w = csv.NewWriter(wOut)
+
+			err = PrintSearchCsvHeader(w)
+			if err != nil {
+				return fmt.Errorf("could not print db search results header %v", err)
+			}
+
+			if verify {
+				// check that all files exist on share
+				err = verifyFilesExist(w, ret, path, !assert, args.JobToPath)
+				if err != nil {
+					return fmt.Errorf("verify project %s on path %s failed %v\n", project, path, err)
+				}
+			} else {
+				err = mongo_client.DisplaySearchObjects(w, ret)
+				if err != nil {
+					return fmt.Errorf("could not list db search results %v\n", err)
+				}
+			}
+			if verbose && len(outputFile) > 0 {
+				log.Printf("Results written to %s", outputFile)
+			}
+			offset += objects_per_page
+			more = objects_per_page == len(ret)
+			w.Flush()
+			if len(outputFile) > 0 {
+				err = f.Close()
+				if err != nil {
+					return fmt.Errorf("could not close output file %s %v\n", outputFile, err)
+				}
 			}
 		}
 	}
@@ -277,12 +302,20 @@ func makeJobObjects(searchObjs []*mongo_client.SearchObject) []openapi.ApiJob {
 	return ret
 }
 
-func verifyFilesExist(w *csv.Writer, files []*mongo_client.SearchObject, path string) error {
+func verifyFilesExist(w *csv.Writer, files []*mongo_client.SearchObject, path string, showAll bool, jobToPath bool) error {
 	lines := [][]string{}
 	for fileIndex := range files {
 		file := files[fileIndex]
-		status := verifyFileExist(filepath.Join(path, file.Path))
-		lines = append(lines, []string {file.Path, file.Manifest, strconv.Itoa(file.Size), file.Checksum, status})
+		var testPath string
+		if jobToPath {
+			testPath = filepath.Join(path, file.Manifest, file.Path)
+		} else {
+			testPath = filepath.Join(path, file.Path)
+		}
+		status := verifyFileExist(testPath)
+		if showAll || status != FILE_OK {
+			lines = append(lines, []string {file.Path, file.Manifest, strconv.Itoa(file.Size), file.Checksum, status})
+		}
 	}
 	return w.WriteAll(lines)
 }
@@ -290,20 +323,20 @@ func verifyFilesExist(w *csv.Writer, files []*mongo_client.SearchObject, path st
 func verifyFileExist(fullpath string) string {
 	_, err := os.Stat(fullpath)
 	if err == nil {
-		return "OK"
-
+		return FILE_OK
 	}
 	// not there, keep waiting
 	if errors.Is(err, os.ErrNotExist) {
-		return "ERROR -- not exist"
+		return FILE_MISSONG
 	}
-	return "ERROR -- could not stat"
+	return FILE_STAT_ERROR
 }
 
-func makeOutputFileName(name string, start int) string {
+func makeOutputFileName(name string, project string, start int) string {
 	ret := strings.TrimSuffix(name, ".csv")
+	ret += "_" + project
 	if start > 0 {
-		ret = ret + "_" + strconv.Itoa(start)
+		ret += "_" + strconv.Itoa(start)
 	}
 	return ret + ".csv"
 }
