@@ -54,6 +54,7 @@ type Arguments struct {
 	InputFile string
 	Verbose bool
 	LogFile string
+	Cancel bool
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -90,6 +91,7 @@ func ParseArgs() (*Arguments, error) {
 	outputFile := flag.String("out", "", "output file")
 	logFile := flag.String("log", "", "log file")
 	verbose := flag.Bool("verbose", false, "log output to console")
+	cancel := flag.Bool("cancel", false, "cancel returned objects")
 	flag.Parse()
 
 	// Build the arguments object.
@@ -125,6 +127,7 @@ func ParseArgs() (*Arguments, error) {
 		InputFile:     	  *inputFile,
 		Verbose:     	  *verbose,
 		LogFile:		  *logFile,
+		Cancel:			  *cancel,
 	}
 	// Validate required arguments.
 	switch {

@@ -101,6 +101,24 @@ $ ssc-cli --url https://localhost/openapi --name Administrator --password spectr
 NOTE: --ext * or not imncluding the --ext parameter will return all that match the file name string 
 on the search_db amd restore_db_objects commands.
 
+### Find and cancel restore jobs
+Find all active restore jobs
+```nashorn js
+ssc-cli --url https://localhost/openapi --name administrator --password spectra --ignore_cert --command get_active_restore_jobs
+```
+Add the flag --cancel to cancel all returned jibs
+
+Find active restore jobs by tag
+```nashorn js
+--url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_jobs_by_tag --tag "Restore Mona"  --verbose
+````
+Add the flag --cancel to cancel all returned jibs.
+To cancel all active restore jobs:
+```nashorn js
+--url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command get_active_restore_jobs --cancel
+````
+
+
 ## Author
 
 developer@spectralogic.com

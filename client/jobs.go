@@ -9,9 +9,16 @@ import (
 
 const JOB_STATUS_COMPLETE = "Completed"
 const JOB_STATUS_FAILED = "Failed"
+const JOB_STATUS_CANCELED = "Canceled"
+const JOB_STATUS_POST_ACTION_PENDING = "PostActionPending"
+const JOB_STATUS_FAILED_OOST_ACTION = "FailedPostActionPending"
 
 func isStateActive(state string) bool {
-	return state != JOB_STATUS_COMPLETE && state != JOB_STATUS_FAILED
+	return state != JOB_STATUS_COMPLETE &&
+		state != JOB_STATUS_FAILED &&
+		state != JOB_STATUS_POST_ACTION_PENDING &&
+		state != JOB_STATUS_CANCELED &&
+		state != JOB_STATUS_FAILED_OOST_ACTION
 }
 
 func RunNow(ssc *SscClient, args *Arguments) error {
@@ -21,6 +28,15 @@ func RunNow(ssc *SscClient, args *Arguments) error {
 		return nil
 	}
 	return fmt.Errorf("run now failed for project %s\n%v\n",  args.ProjectName, err)
+}
+
+func CancelJob(ssc *SscClient, args *Arguments) error {
+	_, err := ssc.Client.ProjectApi.CancelJob(*ssc.Context, args.Job)
+	if err == nil {
+		fmt.Printf("Canceled %s\n", args.Job)
+		return nil
+	}
+	return fmt.Errorf("cancel failed for job %s\n%v\n",  args.Job, err)
 }
 
 func displayJobs(jobs openapi.ApiJobPaginator) error {
@@ -75,7 +91,7 @@ func GetJobStatus(ssc *SscClient, args *Arguments) error {
 
 func GetAllJobs(ssc *SscClient, args *Arguments) error {
 	jobType := ""
-	if args.Command == "get_all_restore_jobs" {
+	if args.Command == "get_all_restore_jobs" ||  args.Command == "get_active_restore_jobs"{
 		jobType = "Restore"
 	}
 	activeOnly := args.Command == "get_active_restore_jobs"
@@ -83,6 +99,24 @@ func GetAllJobs(ssc *SscClient, args *Arguments) error {
 	if err != nil {
 		return fmt.Errorf("get jobs failed %v\n", err)
 	}
+
+	//  cancel (--cancel) or just list
+	if args.Cancel {
+		for jobIndex := range response.Data {
+			job := response.Data[jobIndex]
+			if isStateActive(*job.State) {
+				_, err = ssc.Client.ProjectApi.CancelJob(*ssc.Context, *job.Name)
+				if err == nil {
+					fmt.Printf("Cancel job %s\n", *job.Name)
+				} else {
+					// best effort to cancel -- keep trying.
+					fmt.Printf("Error: cancel job %s failed %v\n", *job.Name, err)
+				}
+			}
+		}
+		return nil
+	}
+
 	return displayJobsWithStatus(response, args.Prefix, activeOnly)
 }
 
@@ -101,14 +135,31 @@ func GetRestoreJobsByTag(ssc *SscClient, args *Arguments) error {
 	if err != nil {
 		return fmt.Errorf("getRestoreJobsByTag failed %v\n", err)
 	}
+	//  cancel (--cancel) or just list
+	if args.Cancel {
+		for jobIndex := range matchingJobs {
+			job := matchingJobs[jobIndex]
+			if isStateActive(*job.State) {
+				_, err = ssc.Client.ProjectApi.CancelJob(*ssc.Context, *job.Name)
+				if err == nil {
+					fmt.Printf("Cancel job %s\n", *job.Name)
+				} else {
+					// best effort to cancel -- keep trying.
+					fmt.Printf("Error: cancel job %s failed %v\n", *job.Name, err)
+				}
+			}
+		}
+		return nil
+	}
+
 	for jobIndex := range matchingJobs {
-		fmt.Printf(matchingJobs[jobIndex])
+		fmt.Printf(formatJobWithState(matchingJobs[jobIndex]))
 	}
 	return nil
 }
 
 
-func doRestoreJobsByTag(ssc *SscClient, match string, activeOnly bool) ([]string, error) {
+func doRestoreJobsByTag(ssc *SscClient, match string, activeOnly bool) ([]openapi.ApiJobWithState, error) {
 	jobType := "Restore"
 	if len(match) == 0 {
 		return nil, fmt.Errorf("must supply --tag parameter")
@@ -118,13 +169,13 @@ func doRestoreJobsByTag(ssc *SscClient, match string, activeOnly bool) ([]string
 		return nil, fmt.Errorf("get jobs failed %v\n", err)
 	}
 	// filter by tag
-	var matchingJobs []string
+	var matchingJobs []openapi.ApiJobWithState
 	for jobIndex := range jobs.Data {
 		job := jobs.Data[jobIndex]
 		tags := job.Tags
 		if tags != nil && includesTag(*tags, match) {
 			if !activeOnly || isStateActive(*job.State) {
-				matchingJobs = append(matchingJobs, formatJobWithState(job))
+				matchingJobs = append(matchingJobs, job)
 			}
 		}
 	}
@@ -144,7 +195,7 @@ func WaitForRestoreJobsByTag(ssc *SscClient, args *Arguments) error {
 		return fmt.Errorf("getRestoreJobsByTag failed %v\n", err)
 	}
 	for jobIndex := range allMatchingJobs {
-		fmt.Printf(allMatchingJobs[jobIndex])
+		fmt.Printf(formatJobWithState(allMatchingJobs[jobIndex]))
 	}
 	return nil
 }

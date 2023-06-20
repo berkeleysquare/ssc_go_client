@@ -13,6 +13,7 @@ var availableCommands = map[string]command {
     "create_source": CreateSourceLocation,
     "create_test_file": CreateTestFile,
     "run_project_now": RunNow,
+    "cancel_job": CancelJob,
     "checksum_test_file": DoHash,
     "directory_checksum": HashDirectory,
     "create_test_migrate": CreateTestMigrate,

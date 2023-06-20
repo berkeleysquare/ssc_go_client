@@ -147,7 +147,7 @@ func MakeProjectApiListJobsOpts(projectName string) *ProjectApiListJobsOpts {
 
 func MakeProjectApiListAllJobsOpts(jobType string) *ProjectApiListJobsOpts {
 	return &ProjectApiListJobsOpts{
-		Limit: 5000,
+		Limit: 10000,
 		FilterBy: jobType,
 		SortType: "DESC",
 		SortBy: "created",
@@ -805,4 +805,65 @@ func (a *ProjectApiService) GetAllJobs(ctx _context.Context, jobType string, loc
 	}
 
 	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+func (a *ProjectApiService) CancelJob(ctx _context.Context, jobName string) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod   = _nethttp.MethodDelete
+		localVarPostBody     interface{}
+		localVarFormFileName string
+		localVarFileName     string
+		localVarFileBytes    []byte
+	)
+
+	// create path and map variables
+	// non public API -- /api instead of /openapi
+	privateApiPath := strings.Replace(a.client.cfg.BasePath, "/openapi", "/api", 1)
+	localVarPath := privateApiPath + "/jobs/" + jobName
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFormFileName, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := _ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
 }
