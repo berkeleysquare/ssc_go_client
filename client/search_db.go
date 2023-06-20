@@ -16,9 +16,9 @@ import (
 
 const (
 	objects_per_page = 500000
-	FILE_OK = "OK"
-	FILE_MISSONG = "ERROR -- not exist"
-	FILE_STAT_ERROR = "ERROR -- could not stat"
+	FILE_OK          = "OK"
+	FILE_MISSONG     = "ERROR -- not exist"
+	FILE_STAT_ERROR  = "ERROR -- could not stat"
 )
 
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
@@ -38,15 +38,14 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("could not load file names from %s %v\n", args.InputFile, err)
 		}
 	} else {
-		return fmt.Errorf("no match string or input file specified" )
+		return fmt.Errorf("no match string or input file specified")
 	}
 	if restore && len(args.Share) == 0 {
-		return fmt.Errorf("no share specified" )
+		return fmt.Errorf("no share specified")
 	}
-		if verbose {
+	if verbose {
 		log.Printf("%d files to search", len(fileNames))
 	}
-
 
 	// output -- console, csv file, or none
 	var w *csv.Writer
@@ -94,7 +93,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 			if err != nil {
 				return fmt.Errorf("could not list db search results %v\n", err)
 			}
-			if verbose && 	len(args.OutputFile) > 0 {
+			if verbose && len(args.OutputFile) > 0 {
 				log.Printf("Results written to %s", args.OutputFile)
 			}
 		}
@@ -109,7 +108,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 		}
 	}
 
-	log.Printf("Successfully ran Command\n",)
+	log.Printf("Successfully ran Command\n")
 	return nil
 }
 
@@ -139,21 +138,29 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("could not load project names from %s %v\n", args.InputFile, err)
 		}
 	} else {
-		return fmt.Errorf("no project name or input file specified" )
+		return fmt.Errorf("no project name or input file specified")
 	}
-
 
 	for projectNameIndex := range projectNames {
 		project := projectNames[projectNameIndex]
-
 		if verbose {
 			log.Printf("execute command %s on project %s", args.Command, project)
 		}
+
+		// update token
+		mySsc, err := ssc.updateToken()
+		if err != nil {
+			return fmt.Errorf("could not update token %v\n", err)
+		}
+		if verbose {
+			log.Print("Updated token")
+		}
+
 		if verify {
 			if len(share) == 0 {
 				return fmt.Errorf("must specify share (location where files were restored)")
 			}
-			location, _, err := getStorageLocation(ssc, share)
+			location, _, err := getStorageLocation(mySsc, share)
 			if err != nil {
 				return fmt.Errorf("could not get information about share %s\n%v", share, err)
 			}
@@ -176,7 +183,7 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 		offset := 0
 		for more {
 			// grab a page of data
-			ret, err := doDbProjectSearch(ssc, project, offset, pageSize, verbose)
+			ret, err := doDbProjectSearch(mySsc, project, offset, pageSize, verbose)
 			if err != nil {
 				return fmt.Errorf("search db for project %s failed %v\n", project, err)
 			}
@@ -225,10 +232,9 @@ func executeDbProjectSearch(ssc *SscClient, args *Arguments) error {
 		}
 	}
 
-	log.Printf("Successfully ran Command\n",)
+	log.Printf("Successfully ran Command\n")
 	return nil
 }
-
 
 func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]*mongo_client.SearchObject, error) {
 
@@ -238,7 +244,7 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 
 	// search for all files including case number
 	if len(FileName) == 0 {
-		return nil, fmt.Errorf("no match string specified" )
+		return nil, fmt.Errorf("no match string specified")
 	}
 	if verbose {
 		log.Printf("SearchObjects(%s, %s)", FileName, exts)
@@ -248,7 +254,6 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 	if err != nil {
 		return nil, fmt.Errorf("search objects for match %s ext %s failed %v\n", FileName, exts, err)
 	}
-
 
 	if verbose {
 		log.Printf("Total matches for %s: %d", FileName, len(response))
@@ -264,7 +269,7 @@ func doDbProjectSearch(ssc *SscClient, project string, offset int, limit int, ve
 
 	// search for all files including case number
 	if len(project) == 0 {
-		return nil, fmt.Errorf("no project name specified" )
+		return nil, fmt.Errorf("no project name specified")
 	}
 	if verbose {
 		log.Printf("SearchProjectObjects(%s)", project)
@@ -281,9 +286,8 @@ func doDbProjectSearch(ssc *SscClient, project string, offset int, limit int, ve
 	return response, nil
 }
 
-
 func makeJobObjects(searchObjs []*mongo_client.SearchObject) []openapi.ApiJob {
-	ret := []openapi.ApiJob {}
+	ret := []openapi.ApiJob{}
 	for objIndex := range searchObjs {
 		obj := searchObjs[objIndex]
 		// add the object under its job
@@ -319,7 +323,7 @@ func verifyFilesExist(w *csv.Writer, files []*mongo_client.SearchObject, path st
 		}
 		status := verifyFileExist(testPath)
 		if showAll || status != FILE_OK {
-			lines = append(lines, []string {file.Path, file.Manifest, strconv.Itoa(file.Size), file.Checksum, status})
+			lines = append(lines, []string{file.Path, file.Manifest, strconv.Itoa(file.Size), file.Checksum, status})
 		}
 	}
 	return w.WriteAll(lines)
