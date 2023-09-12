@@ -50,7 +50,6 @@ var noTokenRequired = map[string]bool{
 	"wait_for_placement": true,
 	"head_object":        true,
 	"inventory":          true,
-	"write_breadcrumbs":  true,
 }
 
 func CommandRequiresClientToken(args *Arguments) (bool, error) {

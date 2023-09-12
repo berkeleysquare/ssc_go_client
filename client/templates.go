@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/csv"
 	"fmt"
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"html/template"
@@ -10,33 +9,14 @@ import (
 )
 
 func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
-	// fileName runs once, inputFile iterates through CSV
+	// required params
 	if len(args.Job) == 0 {
-		return fmt.Errorf("no job name specified")
+		return fmt.Errorf("no job name (--job) specified")
 	}
-
+	if len(args.InputFile) == 0 {
+		return fmt.Errorf("no HTML template (--in) specified")
+	}
 	verbose := args.Verbose
-
-	var w *csv.Writer
-	outputFile := args.OutputFile
-
-	// list files
-	wOut := os.Stdout
-	if len(outputFile) > 0 {
-		f, err := os.Create(outputFile)
-		if err != nil {
-			return fmt.Errorf("Could not create %s\n%v\n", outputFile, err)
-		}
-		defer f.Close()
-		wOut = f
-	}
-	w = csv.NewWriter(wOut)
-	defer w.Flush()
-
-	err := PrintManifestCsvHeader(w)
-	if err != nil {
-		return fmt.Errorf("could not print manifest header %v", err)
-	}
 
 	tmpl := template.Must(template.ParseFiles(args.InputFile))
 
@@ -59,7 +39,7 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 		offset += limit
 		more = isTruncated
 	}
-	fmt.Printf("Successfully ran Command\n")
+	fmt.Printf("\nSuccessfully ran Command\n")
 	return nil
 }
 
