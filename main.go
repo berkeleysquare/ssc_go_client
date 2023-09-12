@@ -38,13 +38,13 @@ func main() {
 	var storCycle *client.SscClient
 	tokenRequired, err := client.CommandRequiresClientToken(args)
 	if err != nil {
-		log.Printf("unknown command %v\n", err )
+		log.Printf("unknown command %v\n", err)
 		return
 	}
 	if tokenRequired {
 		storCycle, err = client.CreateClient(args)
 		if err != nil {
-			log.Printf("could not create client %v\n", err)
+			log.Printf("could not create StorCycle client %v\n", err)
 			return
 		}
 	}
