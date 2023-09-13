@@ -51,7 +51,7 @@
             The file you are trying to access has been archived. If you need this restored,
             please open a ticket in ServiceNow or call the HelpDesk (203-688-4357)
             and assign it to Storage and Data Protection.
-            <strong>(Please include the file name and file path in the ticket.)</strong>
+            <p><strong>(Please include the file name and file path in the ticket.)</strong></p>
         </td>
     </tr>
     <tr class="content">
@@ -63,6 +63,12 @@
                     </tr>
                     <tr>
                         <td>Original location</td><td>{{ .Path }}</td>
+                    </tr>
+                    <tr>
+                        <td>Job</td><td>{{ .Job }}</td>
+                    </tr>
+                    <tr>
+                        <td>Archive date</td><td>{{ .RecordTime }}</td>
                     </tr>
                 </div>
             </table>
