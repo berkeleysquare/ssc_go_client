@@ -72,7 +72,10 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile, job
 		// ensure directory exists on change
 		directory := filepath.Dir(fullPath)
 		if currentContainingDirectory != directory {
-			err := os.MkdirAll(filepath.Dir(directory), 0770)
+			if verbose {
+				log.Printf("Create directories: %s", directory)
+			}
+			err := os.MkdirAll(directory, 0777)
 			if err != nil {
 				return fmt.Errorf("Failed to create directory %s\n%v", directory, err)
 			}
