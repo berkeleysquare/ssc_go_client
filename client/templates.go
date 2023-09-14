@@ -40,7 +40,7 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 	tmpl := template.Must(template.ParseFiles(args.InputFile))
 
 	// iterate through all pages and extract just names
-	offset := int64(0)
+	offset := int64(args.Start)
 	more := true
 	if verbose {
 		log.Printf("doGetManifest(%s)", args.Job)
@@ -87,13 +87,16 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile, job
 			log.Printf("makeBreadcrumb %s\n", fullPath)
 		}
 		f, err := os.Create(fullPath)
-		if err != nil {
-			return fmt.Errorf("Failed to create file %s\n%v", fullPath, err)
-		}
-		tmpl.Execute(f, info)
-		err = f.Close()
-		if err != nil {
-			return fmt.Errorf("Failed to close file %s\n%v", fullPath, err)
+		if err == nil {
+			tmpl.Execute(f, info)
+			err = f.Close()
+			if err != nil {
+				// log and move on
+				log.Printf("Failed to close file %s\n", fullPath)
+			}
+		} else {
+			// log and move on
+			log.Printf("Failed to create file %s\n%v", fullPath, err)
 		}
 	}
 	return nil
