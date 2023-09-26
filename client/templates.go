@@ -96,7 +96,7 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile, job
 			}
 		} else {
 			// log and move on
-			log.Printf("Failed to create file %s\n%v", fullPath, err)
+			log.Printf("ERROR: failed to create file %s\n%v", fullPath, err)
 		}
 	}
 	return nil
