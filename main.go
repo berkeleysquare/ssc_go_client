@@ -24,15 +24,17 @@ func main() {
 	if len(args.LogFile) > 0 {
 		wOut := os.Stdout
 		if len(args.LogFile) > 0 {
-			f, err := os.Create(args.LogFile)
+			logFile := args.LogFile + client.MakeTimestamp() + ".log"
+			f, err := os.Create(logFile)
 			if err != nil {
-				log.Printf("Could not create log file %s\n%v\n", args.LogFile, err)
+				log.Printf("Could not create log file %s\n%v\n", logFile, err)
 			}
 			defer f.Close()
 			wOut = f
 		}
 		log.SetOutput(wOut)
 	}
+
 
 	// Create client if command requires it
 	var storCycle *client.SscClient
