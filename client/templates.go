@@ -51,7 +51,7 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("get manifest %s failed %v\n", args.Job, err)
 		}
 
-		err = doBreadcrumbs(tmpl, ret, args.Job, verbose)
+		err = doBreadcrumbs(tmpl, ret, args.Job, args.Suffix, verbose)
 		if err != nil {
 			return fmt.Errorf("could not list search results %v\n", err)
 		}
@@ -62,13 +62,13 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 	return nil
 }
 
-func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile, job string, verbose bool) error {
+func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile, job string, suffix string, verbose bool) error {
 
 	currentContainingDirectory := ""
 	for fileIndex := range files {
 		file := files[fileIndex]
 		var f *os.File
-		fullPath := *file.Path + ".html"
+		fullPath := *file.Path + suffix
 		// ensure directory exists on change
 		directory := filepath.Dir(fullPath)
 		if currentContainingDirectory != directory {
