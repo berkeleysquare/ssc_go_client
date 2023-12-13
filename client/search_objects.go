@@ -166,7 +166,7 @@ func executeSearch(ssc *SscClient, args *Arguments) error {
 	verbose := args.Verbose
 	var exts []string
 	// no extensions or "*" means all files
-	if args.Extensions == nil && len(args.Extensions) > 0 && args.Extensions[0] != "*" {
+	if args.Extensions == nil || len(args.Extensions) > 0 || args.Extensions[0] != "*" {
 		exts = args.Extensions
 	} else {
 		exts = []string{}
