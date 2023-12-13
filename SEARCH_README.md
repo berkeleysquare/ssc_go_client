@@ -49,6 +49,8 @@ $ ssc-cli  --url https://localhost/openapi --name Administrator --password spect
 Include --verbose to write log output to the console. 
 Include --verbose and --log <logfile> to capture output to a file.
 
+No --exts parameter, or --exts "*" will return all files matching the search string.
+
 ###Restore example:
 ```shell
 $ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --file_name picnic -ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
@@ -64,6 +66,7 @@ If --in is specified, it will read filenames from the CSV file
 ```shell
 $ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --in directory_list -ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
 ```
+No --exts parameter, or --exts "*" will return all files matching the search string.
 
 ### Restore status
 All projects created have a tag of "Restore &lt;caseid&gt;" ("Restore" + space + the search/restore term).
