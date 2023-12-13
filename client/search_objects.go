@@ -14,7 +14,7 @@ const (
 )
 
 func PrintSearchCsvHeader(w *csv.Writer) error {
-	var line = []string {"Key","Job"}
+	var line = []string{"Key", "Job"}
 	return w.Write(line)
 }
 
@@ -26,7 +26,7 @@ func doSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]o
 
 	// search for all files including case number
 	if len(FileName) == 0 {
-		return nil, fmt.Errorf("no match string specified" )
+		return nil, fmt.Errorf("no match string specified")
 	}
 	if verbose {
 		log.Printf("SearchObjects(%s)", FileName)
@@ -59,7 +59,20 @@ func doSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]o
 			log.Printf("getJobFiles(%s) returned %d files", *job.Name, len(filenames))
 		}
 		if filenames != nil {
-			matching := []string{}
+			var matching []string
+			if len(exts) == 0 {
+				matching = filenames
+			} else {
+				matching = []string{}
+				for objectIndex := range filenames {
+					objectName := filenames[objectIndex]
+					for extIndex := range exts {
+						if strings.HasSuffix(objectName, exts[extIndex]) {
+							matching = append(matching, objectName)
+						}
+					}
+				}
+			}
 			for objectIndex := range filenames {
 				objectName := filenames[objectIndex]
 				for extIndex := range exts {
@@ -142,7 +155,7 @@ func doRestore(ssc *SscClient, jobs []openapi.ApiJob, Share string, FileName str
 		}
 	}
 
-	log.Printf("Successfully ran Command\n",)
+	log.Printf("Successfully ran Command\n")
 	return nil
 }
 
@@ -150,9 +163,14 @@ func executeSearch(ssc *SscClient, args *Arguments) error {
 
 	var fileNames []string
 	var err error
-	exts := []string(args.Extensions)
 	verbose := args.Verbose
-
+	var exts []string
+	// no extensions or "*" means all files
+	if args.Extensions != nil && len(args.Extensions) > 0 && args.Extensions[0] != "*" {
+		exts = args.Extensions
+	} else {
+		exts = []string{}
+	}
 	// fileName runs once, inputFile iterates through CSV
 	if len(args.FileName) > 0 {
 		fileNames = []string{args.FileName}
@@ -162,17 +180,16 @@ func executeSearch(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("could not load file names from %s %v\n", args.InputFile, err)
 		}
 	} else {
-		return fmt.Errorf("no match string or input file specified" )
+		return fmt.Errorf("no match string or input file specified")
 	}
 	if verbose {
 		log.Printf("%d files to search", len(fileNames))
 	}
 
-
 	if args.Command == "restore_objects" && len(args.Share) == 0 {
-		return fmt.Errorf("no share specified for restore" )
+		return fmt.Errorf("no share specified for restore")
 	}
-		// output -- console, csv file, or none
+	// output -- console, csv file, or none
 	var w *csv.Writer
 	outputFile := args.OutputFile
 	writeOutput := args.Command == "search_objects" || len(outputFile) > 0
@@ -227,12 +244,11 @@ func executeSearch(ssc *SscClient, args *Arguments) error {
 			}
 		}
 	}
-	log.Printf("Successfully ran Command\n",)
+	log.Printf("Successfully ran Command\n")
 	return nil
 }
 
-
-func loadFilenames(inputFile string) ([]string, error){
+func loadFilenames(inputFile string) ([]string, error) {
 	f, err := os.Open(inputFile)
 	if err != nil {
 		return nil, fmt.Errorf("could not open input file %s %v\n", inputFile, err)
@@ -268,7 +284,7 @@ func displayJobObjects(w *csv.Writer, jobs []openapi.ApiJob) error {
 		jobName := job.Name
 		fileNames := *job.Filenames
 		for fileIndex := range fileNames {
-			lines = append(lines, []string {fileNames[fileIndex], *jobName})
+			lines = append(lines, []string{fileNames[fileIndex], *jobName})
 		}
 	}
 	return w.WriteAll(lines)

@@ -15,7 +15,7 @@ const (
 )
 
 func PrintManifestCsvHeader(w *csv.Writer) error {
-	var line = []string {"Name","Path","Size","Checksum"}
+	var line = []string{"Name", "Path", "Size", "Checksum"}
 	return w.Write(line)
 }
 
@@ -23,7 +23,7 @@ func getManifestFiles(ssc *SscClient, job string, fileName string, exts []string
 	ret := []string{}
 	// search for all files including case number
 	if len(job) == 0 {
-		return nil, fmt.Errorf("no job name specified" )
+		return nil, fmt.Errorf("no job name specified")
 	}
 	if verbose {
 		log.Printf("getManifestFiles(%s, %s)", job, fileName)
@@ -39,7 +39,12 @@ func getManifestFiles(ssc *SscClient, job string, fileName string, exts []string
 		if err != nil {
 			return nil, fmt.Errorf("get catalog for %s failed %v\n", job, err)
 		}
-		filtered := filterFiles(files, fileName, exts, verbose)
+		var filtered []openapi.ApiManifestFile
+		if len(exts) == 0 {
+			filtered = files
+		} else {
+			filtered = filterFiles(files, fileName, exts, verbose)
+		}
 		for fileIndex := range filtered {
 			file := files[fileIndex]
 			ret = append(ret, *file.Path)
@@ -56,7 +61,7 @@ func getManifestFiles(ssc *SscClient, job string, fileName string, exts []string
 func doGetManifest(ssc *SscClient, job string, offset int64, verbose bool) ([]openapi.ApiManifestFile, bool, error) {
 	// search for all files including case number
 	if len(job) == 0 {
-		return nil, false, fmt.Errorf("no job name specified" )
+		return nil, false, fmt.Errorf("no job name specified")
 	}
 
 	opts := openapi.ProjectApiListCatalogOpts{Limit: limit, Skip: offset}
@@ -64,7 +69,7 @@ func doGetManifest(ssc *SscClient, job string, offset int64, verbose bool) ([]op
 	if err != nil {
 		return nil, false, fmt.Errorf("get catalog for %s failed %v\n", job, err)
 	}
-	isTruncated := response.TotalResults > offset + limit
+	isTruncated := response.TotalResults > offset+limit
 	if verbose {
 		log.Printf("Manifest %s: TotalResults %d, offset %d, limit %d", job, response.TotalResults, offset, limit)
 	}
@@ -100,7 +105,7 @@ func listCatalog(ssc *SscClient, args *Arguments) error {
 
 	// fileName runs once, inputFile iterates through CSV
 	if len(args.Job) == 0 {
-		return fmt.Errorf("no job name specified" )
+		return fmt.Errorf("no job name specified")
 	}
 
 	verbose := args.Verbose
@@ -146,7 +151,7 @@ func listCatalog(ssc *SscClient, args *Arguments) error {
 		offset += limit
 		more = isTruncated
 	}
-	fmt.Printf("Successfully ran Command\n",)
+	fmt.Printf("Successfully ran Command\n")
 	return nil
 }
 
@@ -167,7 +172,7 @@ func displayManifestFileObjects(w *csv.Writer, files []openapi.ApiManifestFile) 
 		if file.Checksum != nil {
 			hash = *file.Checksum
 		}
-		lines = append(lines, []string {*file.Name, path, size, hash})
+		lines = append(lines, []string{*file.Name, path, size, hash})
 	}
 	return w.WriteAll(lines)
 }

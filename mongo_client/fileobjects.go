@@ -11,20 +11,19 @@ import (
 )
 
 type SearchObject struct {
-	Name 		string 	`json:"name" bson:"_id"`
-	Manifest  	string 	`json:"manifest"`
+	Name     string `json:"name" bson:"_id"`
+	Manifest string `json:"manifest"`
 }
 
 var (
-	timeout = 45 * time.Minute
+	timeout = 90 * time.Minute
 )
-
 
 func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 	lines := [][]string{}
 	for fileIndex := range files {
 		file := files[fileIndex]
-		lines = append(lines, []string {file.Name, file.Manifest})
+		lines = append(lines, []string{file.Name, file.Manifest})
 	}
 	return w.WriteAll(lines)
 }
@@ -32,7 +31,7 @@ func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 func queryPath(collection *mongo.Collection, name string, exts []string) ([]*SearchObject, error) {
 
 	var extsBson bson.A
-	if len(exts) == 0 || exts[0] == "*"{
+	if len(exts) == 0 || exts[0] == "*" {
 		// match any -- will inquire about desired behavior
 		extsBson = append(extsBson, bson.D{{"componentpath", primitive.Regex{Pattern: ".$", Options: "i"}}})
 	} else {
@@ -99,4 +98,3 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 
 	return ret, nil
 }
-
