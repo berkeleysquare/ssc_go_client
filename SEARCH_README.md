@@ -49,11 +49,16 @@ $ ssc-cli  --url https://localhost/openapi --name Administrator --password spect
 Include --verbose to write log output to the console. 
 Include --verbose and --log <logfile> to capture output to a file.
 
-No --exts parameter, or --exts "*" will return all files matching the search string.
+No --exts parameter, or --exts "*" will return all files matching the search string:
+```shell
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command search_objects --in dir_list.csv -ext "*" 
+-- or --
+$ ssc-cli  --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command search_objects --in dir_list.csv 
+```
 
 ###Restore example:
 ```shell
-$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --file_name picnic -ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --file_name picnic --ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
 ```
 Will output CSV only if --out is specified.
 
@@ -64,10 +69,14 @@ If --out is not specified, it will print to the console.
 If --in is specified, it will read filenames from the CSV file
 (First column, second row). Else the search string must be specified as --file_name
 ```shell
-$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --in directory_list -ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --in directory_list --ext mp4,mp3,jpg --share Restorey --directory /testAuto --out myFiles.csv
 ```
 No --exts parameter, or --exts "*" will return all files matching the search string.
-
+```shell
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --file_name picnic --ext "*" --share Restorey --directory /testAuto --out myFiles.csv
+-- or --
+$ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_objects --file_name picnic --share Restorey --directory /testAuto --out myFiles.csv
+```
 ### Restore status
 All projects created have a tag of "Restore &lt;caseid&gt;" ("Restore" + space + the search/restore term).
 Jobs can be queried using this tag to check status

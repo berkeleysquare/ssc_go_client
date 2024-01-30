@@ -13,6 +13,7 @@ import (
 type SearchObject struct {
 	Name     string `json:"name" bson:"_id"`
 	Manifest string `json:"manifest"`
+	Share    string `json:"share" bson:"storagelocation"`
 }
 
 var (
@@ -23,7 +24,7 @@ func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 	lines := [][]string{}
 	for fileIndex := range files {
 		file := files[fileIndex]
-		lines = append(lines, []string{file.Name, file.Manifest})
+		lines = append(lines, []string{file.Name, file.Manifest, file.Share})
 	}
 	return w.WriteAll(lines)
 }
@@ -72,6 +73,7 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 				bson.D{
 					{"_id", 1},
 					{"manifest", 1},
+					{"storagelocation", 1},
 				},
 			},
 		},

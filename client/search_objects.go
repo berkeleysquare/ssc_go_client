@@ -14,7 +14,7 @@ const (
 )
 
 func PrintSearchCsvHeader(w *csv.Writer) error {
-	var line = []string{"Key", "Job"}
+	var line = []string{"Key", "Job", "Share"}
 	return w.Write(line)
 }
 
