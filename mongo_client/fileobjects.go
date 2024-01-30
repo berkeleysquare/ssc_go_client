@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 )
 
@@ -47,7 +48,7 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 				bson.D{
 					{"$and",
 						bson.A{
-							bson.D{{"componentpath", primitive.Regex{Pattern: name, Options: "i"}}},
+							bson.D{{"componentpath", primitive.Regex{Pattern: strings.ToLower(name)}}},
 							bson.D{
 								{"$or", extsBson},
 							},
