@@ -14,7 +14,7 @@ const (
 )
 
 func PrintSearchCsvHeader(w *csv.Writer) error {
-	var line = []string{"Key", "Job", "Share"}
+	var line = []string{"Key", "Job", "Project", "Share"}
 	return w.Write(line)
 }
 
@@ -447,7 +447,7 @@ func executeSearchNew(ssc *SscClient, args *Arguments) error {
 
 		// list if command is search or if output file supplied to restore
 		if writeOutput {
-			err = displayJobObjects(w, ret)
+			err = displayJobObjectsV4(w, ret)
 			if err != nil {
 				return fmt.Errorf("could not list search results %v\n", err)
 			}
@@ -498,9 +498,27 @@ func displayJobObjects(w *csv.Writer, jobs []openapi.ApiJob) error {
 	for jobIndex := range jobs {
 		job := jobs[jobIndex]
 		jobName := job.Name
+		project := ""
+		share := ""
 		fileNames := *job.Filenames
 		for fileIndex := range fileNames {
-			lines = append(lines, []string{fileNames[fileIndex], *jobName})
+			lines = append(lines, []string{fileNames[fileIndex], *jobName, project, share})
+		}
+	}
+	return w.WriteAll(lines)
+}
+
+func displayJobObjectsV4(w *csv.Writer, jobs []openapi.ApiJob) error {
+
+	lines := [][]string{}
+	for jobIndex := range jobs {
+		job := jobs[jobIndex]
+		jobName := job.Name
+		fileNames := *job.Filenames
+		project := job.Project
+		share := ""
+		for fileIndex := range fileNames {
+			lines = append(lines, []string{fileNames[fileIndex], *jobName, *project, share})
 		}
 	}
 	return w.WriteAll(lines)

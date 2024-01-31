@@ -23,9 +23,10 @@ var (
 
 func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 	lines := [][]string{}
+	project := ""
 	for fileIndex := range files {
 		file := files[fileIndex]
-		lines = append(lines, []string{file.Name, file.Manifest, file.Share})
+		lines = append(lines, []string{file.Name, file.Manifest, project, file.Share})
 	}
 	return w.WriteAll(lines)
 }
