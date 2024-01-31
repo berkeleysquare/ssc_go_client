@@ -19,9 +19,9 @@ func displayRestoreProjects(projects openapi.ApiProjectPaginator) error {
 
 func ListRestoreProjects(ssc *SscClient, args *Arguments) error {
 	opts := &openapi.ProjectApiListProjectsOpts{
-		Skip:		optional.NewInt64(int64(args.Start)),
-		Limit:		optional.NewInt64(int64(args.Count)),
-		FilterBy:   optional.NewInterface([]string{"Restore", "RestoreBreadcrumb"}),
+		Skip:     optional.NewInt64(int64(args.Start)),
+		Limit:    optional.NewInt64(int64(args.Count)),
+		FilterBy: optional.NewInterface([]string{"Restore", "RestoreBreadcrumb"}),
 	}
 
 	projects, resp, err := getProjects(ssc, opts)
@@ -35,10 +35,10 @@ func CreateRestoreProject(ssc *SscClient, args *Arguments) error {
 
 	// create and run a Scan Project for "share"
 	if len(args.Share) == 0 {
-		return fmt.Errorf("no share specified in create_restore" )
+		return fmt.Errorf("no share specified in create_restore")
 	}
 	if len(args.Job) == 0 {
-		return fmt.Errorf("no job/manifest specified in create_restore" )
+		return fmt.Errorf("no job/manifest specified in create_restore")
 	}
 	projectName := args.ProjectName
 	if len(projectName) == 0 {
@@ -71,7 +71,7 @@ func CreateRestoreProject(ssc *SscClient, args *Arguments) error {
 		Active:           &active,
 		Tags:             &tags,
 		Schedule:         *NowSchedule(),
-		ProjectType:	  &policyType,
+		ProjectType:      &policyType,
 		RestoreManifest:  &args.Job,
 	}
 	if len(breadCrumbAction) > 0 {
@@ -102,9 +102,38 @@ func CreateSpecificFilesRestoreProject(ssc *SscClient, share string, fileName st
 		Active:           &active,
 		Tags:             &tags,
 		Schedule:         *NowSchedule(),
-		ProjectType:	  &policyType,
+		ProjectType:      &policyType,
 		RestoreManifest:  &job,
 		RestoreVersions:  fileList,
+	}
+
+	restore, resp, err := ssc.Client.ProjectApi.UpdateRestoreProject(*ssc.Context, projectName, *restoreDefinition)
+	if err != nil {
+		return fmt.Errorf("failed to create/update restore (%d) %v\n", resp.StatusCode, ExpandOpenApiErr(err))
+	}
+	log.Printf("Successfully created restore project %s\n", *restore.Status.Name)
+	return nil
+}
+
+func CreateSpecificFilesRestoreProjectV4(ssc *SscClient, share string, fileName string, job string, directory string, fileList *[]string) error {
+
+	timestamp := string(time.Now().Format("06-01-02-15-04-05.000"))
+	projectName := fmt.Sprintf("Restore_%s__%s_%s", fileName, job, timestamp)
+	policyType := "Restore"
+	description := fmt.Sprintf("%s, Created by API %s", projectName, timestamp)
+	active := true
+	tags := []string{"Restore " + fileName}
+
+	restoreDefinition := &openapi.ApiProjectRestoreV4{
+		Description:        &description,
+		Share:              &share,
+		WorkingDirectory:   &directory,
+		Active:             &active,
+		Tags:               &tags,
+		Schedule:           *NowSchedule(),
+		ProjectType:        &policyType,
+		RestoreFromProject: &job,
+		RestoreVersions:    fileList,
 	}
 
 	restore, resp, err := ssc.Client.ProjectApi.UpdateRestoreProject(*ssc.Context, projectName, *restoreDefinition)
