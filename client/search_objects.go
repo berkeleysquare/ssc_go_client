@@ -98,7 +98,7 @@ func doSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]o
 func doSearchNew(ssc *SscClient, FileName string, exts []string, verbose bool) ([]openapi.ApiJob, error) {
 
 	if verbose {
-		log.Printf("doSearch(%s, %v)", FileName, exts)
+		log.Printf("doSearchNew(%s, %v)", FileName, exts)
 	}
 
 	// search for all files including case number
@@ -106,7 +106,7 @@ func doSearchNew(ssc *SscClient, FileName string, exts []string, verbose bool) (
 		return nil, fmt.Errorf("no match string specified")
 	}
 	if verbose {
-		log.Printf("SearchObjects(%s)", FileName)
+		log.Printf("SearchObjectsNew(%s)", FileName)
 	}
 	ctx, err := ssc.getContext(false)
 	if err != nil {
@@ -117,7 +117,7 @@ func doSearchNew(ssc *SscClient, FileName string, exts []string, verbose bool) (
 		return nil, fmt.Errorf("search objects for match %s failed %v\n", FileName, err)
 	}
 	if verbose {
-		log.Printf("SearchObjects(%s) returned %d jobs", FileName, len(response.Data))
+		log.Printf("SearchObjectsNew(%s) returned %d jobs", FileName, len(response.Data))
 	}
 
 	// Try each supplied extension
@@ -148,14 +148,6 @@ func doSearchNew(ssc *SscClient, FileName string, exts []string, verbose bool) (
 						if strings.HasSuffix(objectName, exts[extIndex]) {
 							matching = append(matching, objectName)
 						}
-					}
-				}
-			}
-			for objectIndex := range filenames {
-				objectName := filenames[objectIndex]
-				for extIndex := range exts {
-					if strings.HasSuffix(objectName, exts[extIndex]) {
-						matching = append(matching, objectName)
 					}
 				}
 			}
