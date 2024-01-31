@@ -123,6 +123,7 @@ func CreateSpecificFilesRestoreProjectV4(ssc *SscClient, share string, fileName 
 	description := fmt.Sprintf("%s, Created by API %s", projectName, timestamp)
 	active := true
 	tags := []string{"Restore " + fileName}
+	allVersions := false
 
 	restoreDefinition := &openapi.ApiProjectRestoreV4{
 		Description:        &description,
@@ -134,6 +135,7 @@ func CreateSpecificFilesRestoreProjectV4(ssc *SscClient, share string, fileName 
 		ProjectType:        &policyType,
 		RestoreFromProject: &job,
 		RestoreVersions:    fileList,
+		AllVersions:        &allVersions,
 	}
 
 	restore, resp, err := ssc.Client.ProjectApi.UpdateRestoreProjectV4(*ssc.Context, projectName, *restoreDefinition)
