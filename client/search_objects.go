@@ -453,7 +453,7 @@ func executeSearchNew(ssc *SscClient, args *Arguments) error {
 			}
 		}
 
-		if args.Command == "restore_objects" {
+		if args.Command == "restore_objects_new" {
 			err = doRestoreNew(mySsc, ret, args.Share, fileName, args.Directory, verbose)
 			if err != nil {
 				return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
