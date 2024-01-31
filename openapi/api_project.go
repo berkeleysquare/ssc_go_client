@@ -577,14 +577,14 @@ UpdateRestoreProject Create or update a restore project.
 
 @return ApiProjectRestore
 */
-func (a *ProjectApiService) UpdateRestoreProjectV4(ctx _context.Context, projectName string, body ApiProjectRestoreV4) (ApiProjectRestore, *_nethttp.Response, error) {
+func (a *ProjectApiService) UpdateRestoreProjectV4(ctx _context.Context, projectName string, body ApiProjectRestoreV4) (ApiProjectRestoreV4, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod   = _nethttp.MethodPut
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  ApiProjectRestore
+		localVarReturnValue  ApiProjectRestoreV4
 	)
 
 	// create path and map variables

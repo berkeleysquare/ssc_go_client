@@ -172,7 +172,7 @@ func doSearchNew(ssc *SscClient, FileName string, exts []string, verbose bool) (
 		}
 	}
 	if verbose {
-		log.Printf("Total matches for %s: %d", FileName, len(ret))
+		log.Printf("Total project matches for %s: %d", FileName, len(filesByProject))
 	}
 	ret := []openapi.ApiJob{}
 	for project, projectFiles := range filesByProject {

@@ -136,7 +136,7 @@ func CreateSpecificFilesRestoreProjectV4(ssc *SscClient, share string, fileName 
 		RestoreVersions:    fileList,
 	}
 
-	restore, resp, err := ssc.Client.ProjectApi.UpdateRestoreProject(*ssc.Context, projectName, *restoreDefinition)
+	restore, resp, err := ssc.Client.ProjectApi.UpdateRestoreProjectV4(*ssc.Context, projectName, *restoreDefinition)
 	if err != nil {
 		return fmt.Errorf("failed to create/update restore (%d) %v\n", resp.StatusCode, ExpandOpenApiErr(err))
 	}
