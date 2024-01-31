@@ -115,7 +115,14 @@ func CreateSpecificFilesRestoreProject(ssc *SscClient, share string, fileName st
 	return nil
 }
 
-func CreateSpecificFilesRestoreProjectV4(ssc *SscClient, share string, fileName string, job string, directory string, fileList *[]string) error {
+func CreateSpecificFilesRestoreProjectV4(
+	ssc *SscClient,
+	share string,
+	fileName string,
+	job string,
+	directory string,
+	fileList *[]string,
+) error {
 
 	timestamp := string(time.Now().Format("06-01-02-15-04-05.000"))
 	projectName := fmt.Sprintf("Restore_%s__%s_%s", fileName, job, timestamp)
