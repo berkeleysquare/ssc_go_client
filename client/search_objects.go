@@ -140,7 +140,7 @@ func doRestore(ssc *SscClient, jobs []openapi.ApiJob, Share string, FileName str
 			}
 			thisJobSlice := Filenames[filesSentThisJob:rightSlice]
 			if verbose {
-				log.Printf("CreateSpecificFilesRestoreProject() %d-%d files", filesSentThisJob, rightSlice)
+				log.Printf("CreateSpecificFilesRestoreProject files %d-%d", filesSentThisJob, rightSlice)
 			}
 			if len(thisJobSlice) > 0 {
 				err := CreateSpecificFilesRestoreProjectV4(ssc, Share, FileName, *job.Name, Directory, &thisJobSlice)
