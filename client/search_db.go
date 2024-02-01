@@ -89,8 +89,8 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 
 		if restore {
 			//package results in apiJobs. One per job containing all job objects
-			jobObjects := makeJobObjectsByProject(ret)
-			err = doRestoreNew(mySsc, jobObjects, args.Share, fileName, args.Directory, verbose)
+			jobObjects := makeJobObjectsByProject(ret, verbose)
+			err = doRestore(mySsc, jobObjects, args.Share, fileName, args.Directory, verbose)
 			if err != nil {
 				return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
 			}
@@ -126,7 +126,7 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 	return response, nil
 }
 
-func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject) []openapi.ApiJob {
+func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, verbose bool) []openapi.ApiJob {
 	filesByShare := make(map[string][]string)
 	// expect project name in the job without the -x suffix
 	re := regexp.MustCompile(`-\d+$`)
@@ -144,6 +144,9 @@ func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject) []openapi.
 	}
 	for project, files := range filesByShare {
 		manifest := openapi.MakeApiJobWithProject(project, files)
+		if verbose {
+			log.Printf("Create job object for project %s with %d files", project, len(files))
+		}
 		ret = append(ret, *manifest)
 	}
 	return ret

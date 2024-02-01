@@ -30,8 +30,6 @@ var availableCommands = map[string]command{
 	"wait_for_restore_jobs_by_tag": WaitForRestoreJobsByTag,
 	"search_objects":               executeSearch,
 	"restore_objects":              executeSearch,
-	"search_objects_new":           executeSearchNew,
-	"restore_objects_new":          executeSearchNew,
 	"get_catalog":                  listCatalog,
 	"latest_job":                   listLatestJob,
 	"get_scan_projects":            ListScanProjects,
