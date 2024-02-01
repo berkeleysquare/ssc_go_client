@@ -37,3 +37,37 @@ type ApiProjectRestore struct {
 	Schedule ApiProjectSchedule `json:"schedule" xml:"schedule"`
 	Status ApiProjectStatus `json:"status,omitempty" xml:"status"`
 }
+
+/**** V4 API client ****/
+
+// ApiProjectRestore Project that restores files and directories to a share.
+type ApiProjectRestoreV4 struct {
+	// Description of the project.
+	Description *string `json:"description,omitempty" xml:"description"`
+	// The source share the project will restore files to. This is not required when updating the project.
+	Share *string `json:"share" xml:"share"`
+	// The directory on the share where the files will be restored. Default is the share root.
+	WorkingDirectory *string `json:"workingDirectory,omitempty" xml:"workingDirectory"`
+	// Tags to attach to jobs executed by this project.
+	Tags *[]string `json:"tags,omitempty" xml:"tags"`
+	// Used to re-activate a deactivated project.
+	Active *bool `json:"active,omitempty" xml:"active"`
+	// Used to pause/resume a project.
+	Enabled *bool `json:"enabled,omitempty" xml:"enabled"`
+	// The type of restore to perform.
+	ProjectType *string `json:"projectType" xml:"projectType"`
+	// The type of bread crumb to create. This is only valid with RestoreBreadcrumb projects.
+	BreadCrumbAction *string `json:"breadCrumbAction,omitempty" xml:"breadCrumbAction"`
+	// A list of users from which email addresses may be found for sending notifications.
+	EmailOnComplete *[]string `json:"emailOnComplete,omitempty" xml:"emailOnComplete"`
+	// The name of the manifest containing the files to be restored. This is synonymous with the original archive job that originally archived the files.
+	RestoreManifest *string `json:"restoreManifest" xml:"restoreManifest"`
+	// The list of versions from the manifest to restore. If empty, the entire manifest is restored.
+	RestoreVersions *[]string `json:"restoreVersions,omitempty" xml:"restoreVersions"`
+	// The name of the project which archived the files to be restored.
+	RestoreFromProject *string `json:"restoreFromProject,omitempty" xml:"restoreFromProject"`
+	// The flag to determine if a restore should look at all versions, or only the most recent. When true, files will be restored with the version suffix.
+	AllVersions *bool `json:"allVersions,omitempty" xml:"allVersions"`
+	Schedule ApiProjectSchedule `json:"schedule" xml:"schedule"`
+	Status ApiProjectStatus `json:"status,omitempty" xml:"status"`
+}

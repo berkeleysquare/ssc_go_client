@@ -28,32 +28,42 @@ type ApiJob struct {
 
 func MakeApiJob(name string, files []string) *ApiJob {
 	return &ApiJob{
-		Name: &name,
+		Name:        &name,
 		Description: nil,
-		Filenames: &files,
-		Tags: nil,
+		Filenames:   &files,
+		Tags:        nil,
+	}
+}
+
+func MakeApiJobWithProject(name string, files []string) *ApiJob {
+	return &ApiJob{
+		Name:        &name,
+		Project:     &name,
+		Description: nil,
+		Filenames:   &files,
+		Tags:        nil,
 	}
 }
 
 type ApiJobStatus struct {
-	Name *string `json:"job" xml:"job"`
+	Name            *string  `json:"job" xml:"job"`
 	PercentComplete *float32 `json:"percentComplete" xml:"percentComplete"`
-	State *string `json:"state" xml:state"`
+	State           *string  `json:"state" xml:state"`
 }
 
 type ApiJobWithState struct {
-	Name *string `json:"name" xml:"name"`
-	Project *string `json:"task,omitempty" xml:"task"`
-	Description *string `json:"description,omitempty" xml:"description"`
-	PercentComplete *float32 `json:"percentComplete" xml:"percentComplete"`
-	State *string `json:"state" xml:state"`
-	Tags *[]string `json:"tags,omitempty" xml:"tags"`
+	Name            *string   `json:"name" xml:"name"`
+	Project         *string   `json:"task,omitempty" xml:"task"`
+	Description     *string   `json:"description,omitempty" xml:"description"`
+	PercentComplete *float32  `json:"percentComplete" xml:"percentComplete"`
+	State           *string   `json:"state" xml:state"`
+	Tags            *[]string `json:"tags,omitempty" xml:"tags"`
 }
 
 type ApiJobsWithStatusPaginator struct {
-	ResultLimit int64 `json:"ResultLimit" xml:"ResultLimit"`
-	ResultOffset int64 `json:"ResultOffset" xml:"ResultOffset"`
-	Timestamp time.Time `json:"Timestamp" xml:"Timestamp"`
-	TotalResults int64 `json:"TotalResults" xml:"TotalResults"`
-	Data []ApiJobWithState `json:"data" xml:"data"`
+	ResultLimit  int64             `json:"ResultLimit" xml:"ResultLimit"`
+	ResultOffset int64             `json:"ResultOffset" xml:"ResultOffset"`
+	Timestamp    time.Time         `json:"Timestamp" xml:"Timestamp"`
+	TotalResults int64             `json:"TotalResults" xml:"TotalResults"`
+	Data         []ApiJobWithState `json:"data" xml:"data"`
 }

@@ -7,12 +7,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 )
 
 type SearchObject struct {
 	Name     string `json:"name" bson:"_id"`
 	Manifest string `json:"manifest"`
+	Share    string `json:"share" bson:"storagelocation"`
 }
 
 var (
@@ -21,9 +23,10 @@ var (
 
 func DisplaySearchObjects(w *csv.Writer, files []*SearchObject) error {
 	lines := [][]string{}
+	project := ""
 	for fileIndex := range files {
 		file := files[fileIndex]
-		lines = append(lines, []string{file.Name, file.Manifest})
+		lines = append(lines, []string{file.Name, file.Manifest, project, file.Share})
 	}
 	return w.WriteAll(lines)
 }
@@ -46,7 +49,7 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 				bson.D{
 					{"$and",
 						bson.A{
-							bson.D{{"componentpath", primitive.Regex{Pattern: name, Options: "i"}}},
+							bson.D{{"componentpath", primitive.Regex{Pattern: strings.ToLower(name)}}},
 							bson.D{
 								{"$or", extsBson},
 							},
@@ -72,6 +75,7 @@ func queryPath(collection *mongo.Collection, name string, exts []string) ([]*Sea
 				bson.D{
 					{"_id", 1},
 					{"manifest", 1},
+					{"storagelocation", 1},
 				},
 			},
 		},

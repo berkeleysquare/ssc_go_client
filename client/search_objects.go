@@ -14,7 +14,7 @@ const (
 )
 
 func PrintSearchCsvHeader(w *csv.Writer) error {
-	var line = []string{"Key", "Job"}
+	var line = []string{"Key", "Job", "Project", "Share"}
 	return w.Write(line)
 }
 
@@ -44,9 +44,10 @@ func doSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]o
 	}
 
 	// Try each supplied extension
-	ret := []openapi.ApiJob{}
+	filesByProject := make(map[string][]string)
 	for jobIndex := range response.Data {
 		job := response.Data[jobIndex]
+		project := *job.Project
 		if verbose {
 			log.Printf("getJobFiles(%s)", *job.Name)
 		}
@@ -73,16 +74,12 @@ func doSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]o
 					}
 				}
 			}
-			for objectIndex := range filenames {
-				objectName := filenames[objectIndex]
-				for extIndex := range exts {
-					if strings.HasSuffix(objectName, exts[extIndex]) {
-						matching = append(matching, objectName)
-					}
-				}
-			}
 			if len(matching) > 0 {
-				ret = append(ret, *openapi.MakeApiJob(*job.Name, matching))
+				_, ok := filesByProject[project]
+				if !ok {
+					filesByProject[project] = []string{}
+				}
+				filesByProject[project] = append(filesByProject[project], matching...)
 			}
 			if verbose {
 				log.Printf("getJobFiles(%s) returned %d matching files", *job.Name, len(matching))
@@ -90,7 +87,11 @@ func doSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]o
 		}
 	}
 	if verbose {
-		log.Printf("Total matches for %s: %d", FileName, len(ret))
+		log.Printf("Total project matches for %s: %d", FileName, len(filesByProject))
+	}
+	ret := []openapi.ApiJob{}
+	for project, projectFiles := range filesByProject {
+		ret = append(ret, *openapi.MakeApiJobWithProject(project, projectFiles))
 	}
 	return ret, nil
 }
@@ -139,10 +140,10 @@ func doRestore(ssc *SscClient, jobs []openapi.ApiJob, Share string, FileName str
 			}
 			thisJobSlice := Filenames[filesSentThisJob:rightSlice]
 			if verbose {
-				log.Printf("CreateSpecificFilesRestoreProject() %d-%d files", filesSentThisJob, rightSlice)
+				log.Printf("CreateSpecificFilesRestoreProject files %d-%d", filesSentThisJob, rightSlice)
 			}
 			if len(thisJobSlice) > 0 {
-				err := CreateSpecificFilesRestoreProject(ssc, Share, FileName, *job.Name, Directory, &thisJobSlice)
+				err := CreateSpecificFilesRestoreProjectV4(ssc, Share, FileName, *job.Name, Directory, &thisJobSlice)
 				if err != nil {
 					return fmt.Errorf("failed to create restore job Restore_%s_%s %v\n", FileName, *job.Name, err)
 				}
@@ -158,7 +159,6 @@ func doRestore(ssc *SscClient, jobs []openapi.ApiJob, Share string, FileName str
 	log.Printf("Successfully ran Command\n")
 	return nil
 }
-
 func executeSearch(ssc *SscClient, args *Arguments) error {
 
 	var fileNames []string
@@ -231,7 +231,7 @@ func executeSearch(ssc *SscClient, args *Arguments) error {
 
 		// list if command is search or if output file supplied to restore
 		if writeOutput {
-			err = displayJobObjects(w, ret)
+			err = displayJobObjectsV4(w, ret)
 			if err != nil {
 				return fmt.Errorf("could not list search results %v\n", err)
 			}
@@ -282,9 +282,27 @@ func displayJobObjects(w *csv.Writer, jobs []openapi.ApiJob) error {
 	for jobIndex := range jobs {
 		job := jobs[jobIndex]
 		jobName := job.Name
+		project := ""
+		share := ""
 		fileNames := *job.Filenames
 		for fileIndex := range fileNames {
-			lines = append(lines, []string{fileNames[fileIndex], *jobName})
+			lines = append(lines, []string{fileNames[fileIndex], *jobName, project, share})
+		}
+	}
+	return w.WriteAll(lines)
+}
+
+func displayJobObjectsV4(w *csv.Writer, jobs []openapi.ApiJob) error {
+
+	lines := [][]string{}
+	for jobIndex := range jobs {
+		job := jobs[jobIndex]
+		jobName := job.Name
+		fileNames := *job.Filenames
+		project := job.Project
+		share := ""
+		for fileIndex := range fileNames {
+			lines = append(lines, []string{fileNames[fileIndex], *jobName, *project, share})
 		}
 	}
 	return w.WriteAll(lines)

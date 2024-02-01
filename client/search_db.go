@@ -7,6 +7,7 @@ import (
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"log"
 	"os"
+	"regexp"
 )
 
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
@@ -26,15 +27,14 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("could not load file names from %s %v\n", args.InputFile, err)
 		}
 	} else {
-		return fmt.Errorf("no match string or input file specified" )
+		return fmt.Errorf("no match string or input file specified")
 	}
 	if restore && len(args.Share) == 0 {
-		return fmt.Errorf("no share specified" )
+		return fmt.Errorf("no share specified")
 	}
-		if verbose {
+	if verbose {
 		log.Printf("%d files to search", len(fileNames))
 	}
-
 
 	// output -- console, csv file, or none
 	var w *csv.Writer
@@ -82,14 +82,14 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 			if err != nil {
 				return fmt.Errorf("could not list db search results %v\n", err)
 			}
-			if verbose && 	len(args.OutputFile) > 0 {
+			if verbose && len(args.OutputFile) > 0 {
 				log.Printf("Results written to %s", args.OutputFile)
 			}
 		}
 
 		if restore {
 			//package results in apiJobs. One per job containing all job objects
-			jobObjects := makeJobObjects(ret)
+			jobObjects := makeJobObjectsByProject(ret, verbose)
 			err = doRestore(mySsc, jobObjects, args.Share, fileName, args.Directory, verbose)
 			if err != nil {
 				return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
@@ -97,10 +97,9 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 		}
 	}
 
-	log.Printf("Successfully ran Command\n",)
+	log.Printf("Successfully ran Command\n")
 	return nil
 }
-
 
 func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([]*mongo_client.SearchObject, error) {
 
@@ -110,7 +109,7 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 
 	// search for all files including case number
 	if len(FileName) == 0 {
-		return nil, fmt.Errorf("no match string specified" )
+		return nil, fmt.Errorf("no match string specified")
 	}
 	if verbose {
 		log.Printf("SearchObjects(%s, %s)", FileName, exts)
@@ -121,35 +120,34 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 		return nil, fmt.Errorf("search objects for match %s ext %s failed %v\n", FileName, exts, err)
 	}
 
-
 	if verbose {
 		log.Printf("Total matches for %s: %d", FileName, len(response))
 	}
 	return response, nil
 }
 
-func makeJobObjects(searchObjs []*mongo_client.SearchObject) []openapi.ApiJob {
-	ret := []openapi.ApiJob {}
+func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, verbose bool) []openapi.ApiJob {
+	filesByShare := make(map[string][]string)
+	// expect project name in the job without the -x suffix
+	re := regexp.MustCompile(`-\d+$`)
+
+	ret := []openapi.ApiJob{}
 	for objIndex := range searchObjs {
 		obj := searchObjs[objIndex]
-		// add the object under its job
-		var manifest *openapi.ApiJob
-		for jobIndex := range ret {
-			job := ret[jobIndex]
-			if *job.Name == obj.Manifest {
-				manifest = &job
-				break
-			}
+		// add the object to the map under its share
+		project := re.ReplaceAllString(obj.Manifest, "")
+		_, ok := filesByShare[project]
+		if !ok {
+			filesByShare[project] = []string{}
 		}
-		if manifest == nil {
-			newnames := []string{}
-			manifest = openapi.MakeApiJob(obj.Manifest, newnames)
-			ret = append(ret, *manifest)
-		}
-		filenames := *manifest.Filenames
-		filenames = append(filenames, obj.Name)
-		*manifest.Filenames = filenames
+		filesByShare[project] = append(filesByShare[project], obj.Name)
 	}
-
+	for project, files := range filesByShare {
+		manifest := openapi.MakeApiJobWithProject(project, files)
+		if verbose {
+			log.Printf("Create job object for project %s with %d files", project, len(files))
+		}
+		ret = append(ret, *manifest)
+	}
 	return ret
 }
