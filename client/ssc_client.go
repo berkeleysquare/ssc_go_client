@@ -9,8 +9,9 @@ import (
 )
 
 type SscClient struct {
-	Client *openapi.APIClient
-	Context *context.Context
+	Client 		*openapi.APIClient
+	Credentials *openapi.ApiCredentials
+	Context 	*context.Context
 }
 
 func CreateClient(args *Arguments) (*SscClient, error) {
@@ -31,11 +32,50 @@ func CreateClient(args *Arguments) (*SscClient, error) {
 		return nil, fmt.Errorf("could not get token %v\n", err)
 	}
 	ctx := context.WithValue(context.Background(), openapi.ContextAccessToken, token.Token)
-	ret := &SscClient{storCycle, &ctx}
+	ret := &SscClient{storCycle, &creds, &ctx}
 	return ret, nil
 }
+
+/*
+	Context should be request-scoped. But many simple, single request calls use the Context member
+	This method is preferred (and can update the token), but the legacy will work
+*/
+func (sscClient SscClient)getContext(updateToken bool) (*context.Context, error) {
+	if !updateToken && sscClient.Context != nil {
+		return sscClient.Context, nil
+	}
+	token, _, err := sscClient.Client.AuthenticationApi.Login(context.TODO(), *sscClient.Credentials)
+	if err != nil {
+		return nil, fmt.Errorf("could not get token for user %s %v\n", sscClient.Credentials.Username, err)
+	}
+	ret := context.WithValue(context.Background(), openapi.ContextAccessToken, token.Token)
+	return &ret, nil
+}
+
+func (sscClient SscClient)updateToken() (*SscClient, error) {
+	newCtx, err := sscClient.getContext(true)
+	if err != nil {
+		return nil, fmt.Errorf("could not get new token %v\n", err)
+	}
+	return &SscClient{sscClient.Client, sscClient.Credentials, newCtx}, nil
+}
+
+func (sscClient SscClient)getToken() interface{} {
+	ctx := *sscClient.Context
+	return ctx.Value(openapi.ContextAccessToken)
+}
+
 
 func NowSchedule() *openapi.ApiProjectSchedule {
 	now := "Now"
 	return &openapi.ApiProjectSchedule{Period: &now}
+}
+
+// get validation errors available in GenericOpenAPIError
+func ExpandOpenApiErr(e error) error {
+	detailError, ok  := e.(openapi.GenericOpenAPIError)
+	if ok {
+		return fmt.Errorf("%v\n%s", detailError, detailError.Body())
+	}
+	return e
 }

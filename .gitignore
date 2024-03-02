@@ -1,0 +1,10 @@
+
+# Other misc things
+/coverage/
+node_modules/
+.idea/
+.DS_Store
+*.iml
+.yarnrc
+ssc-cli
+

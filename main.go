@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/SpectraLogic/ssc_go_client/client"
+	"log"
+	"os"
 )
 
 func main() {
@@ -20,17 +21,30 @@ func main() {
 		return
 	}
 
-	// Create client if ocomamnd requires it
+	if len(args.LogFile) > 0 {
+		wOut := os.Stdout
+		if len(args.LogFile) > 0 {
+			f, err := os.Create(args.LogFile)
+			if err != nil {
+				log.Printf("Could not create log file %s\n%v\n", args.LogFile, err)
+			}
+			defer f.Close()
+			wOut = f
+		}
+		log.SetOutput(wOut)
+	}
+
+	// Create client if command requires it
 	var storCycle *client.SscClient
-	tokenRequireed, err := client.CommandRequiresClientToken(args)
+	tokenRequired, err := client.CommandRequiresClientToken(args)
 	if err != nil {
-		fmt.Printf("unknown command %v\n", err )
+		log.Printf("unknown command %v\n", err )
 		return
 	}
-	if tokenRequireed {
+	if tokenRequired {
 		storCycle, err = client.CreateClient(args)
 		if err != nil {
-			fmt.Printf("could not create client %v\n", err)
+			log.Printf("could not create client %v\n", err)
 			return
 		}
 	}
@@ -38,7 +52,7 @@ func main() {
 	// Run the command
 	err = client.RunCommand(storCycle, args)
 	if err != nil {
-		fmt.Printf("error running command %s, %v\n", args.Command, err)
+		log.Printf("error running command %s, %v\n", args.Command, err)
 		return
 	}
 
