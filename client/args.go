@@ -21,40 +21,41 @@ func (s *stringArrayFlag) Set(in string) error {
 	return nil
 }
 
-func (s *stringArrayFlag) String() string{
+func (s *stringArrayFlag) String() string {
 	return strings.Join(*s, ",")
 }
 
 type Arguments struct {
-	Url string
-	Command string
-	Bucket string
-	Job string
-	Name string
-	Tag string
-	FileName string
-	Domain string
-	Password string
-	Directory string
-	IncludeDirectory string
-	ExcludeDirectory string
-	Share string
-	Target string
-	Clone string
-	ProjectName string
-	Prefix string
-	Extensions stringArrayFlag
-	Start, Count int
-	IgnoreCert bool
-	DontWaitForTape bool
-	MakeLinks string
-	Endpoint, Proxy string
+	Url                  string
+	Command              string
+	Bucket               string
+	Job                  string
+	Name                 string
+	Tag                  string
+	FileName             string
+	Domain               string
+	Password             string
+	Directory            string
+	IncludeDirectory     string
+	ExcludeDirectory     string
+	Share                string
+	Target               string
+	Clone                string
+	ProjectName          string
+	Prefix               string
+	Extensions           stringArrayFlag
+	Start, Count         int
+	IgnoreCert           bool
+	DontWaitForTape      bool
+	MakeLinks            string
+	Endpoint, Proxy      string
 	AccessKey, SecretKey string
-	OutputFile string
-	InputFile string
-	Verbose bool
-	LogFile string
-	Cancel bool
+	OutputFile           string
+	InputFile            string
+	Verbose              bool
+	LogFile              string
+	Cancel               bool
+	FastSearch           bool
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -92,6 +93,7 @@ func ParseArgs() (*Arguments, error) {
 	logFile := flag.String("log", "", "log file")
 	verbose := flag.Bool("verbose", false, "log output to console")
 	cancel := flag.Bool("cancel", false, "cancel returned objects")
+	fastSearch := flag.Bool("fast_search", false, "match start of filename or folder in path")
 	flag.Parse()
 
 	// Build the arguments object.
@@ -124,15 +126,18 @@ func ParseArgs() (*Arguments, error) {
 		SecretKey:        paramOrEnv(*secretKeyParam, "DS3_SECRET_KEY"),
 		Proxy:            paramOrEnv(*proxyParam, "DS3_PROXY"),
 		OutputFile:       *outputFile,
-		InputFile:     	  *inputFile,
-		Verbose:     	  *verbose,
-		LogFile:		  *logFile,
-		Cancel:			  *cancel,
+		InputFile:        *inputFile,
+		Verbose:          *verbose,
+		LogFile:          *logFile,
+		Cancel:           *cancel,
+		FastSearch:       *fastSearch,
 	}
 	// Validate required arguments.
 	switch {
-		case args.Command == "": return nil, errors.New("Must specify a command.")
-		default: return &args, nil
+	case args.Command == "":
+		return nil, errors.New("Must specify a command.")
+	default:
+		return &args, nil
 	}
 
 }
@@ -151,8 +156,11 @@ func ValueOrDefault(argValue string, defaultValue string) string {
 func paramOrEnv(param, envName string) string {
 	env := os.Getenv(envName)
 	switch {
-	case param != "": return param
-	case env != "": return env
-	default: return ""
+	case param != "":
+		return param
+	case env != "":
+		return env
+	default:
+		return ""
 	}
 }

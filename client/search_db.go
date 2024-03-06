@@ -8,7 +8,15 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
 )
+
+func pinSearchToStart(raw string, fastFlag bool) string {
+	if !fastFlag || strings.HasPrefix(raw, "^") {
+		return raw
+	}
+	return "^" + raw
+}
 
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
 
@@ -17,6 +25,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 	exts := []string(args.Extensions)
 	verbose := args.Verbose
 	restore := args.Command == "restore_db_objects"
+	fast := args.FastSearch
 
 	// fileName runs once, inputFile iterates through CSV
 	if len(args.FileName) > 0 {
@@ -62,7 +71,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 	}
 
 	for fileNameIndex := range fileNames {
-		fileName := fileNames[fileNameIndex]
+		fileName := pinSearchToStart(fileNames[fileNameIndex], fast)
 		// update token
 		mySsc, err := ssc.updateToken()
 		if err != nil {
