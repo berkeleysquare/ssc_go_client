@@ -36,6 +36,7 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 		return fmt.Errorf("no HTML template (--in) specified")
 	}
 	verbose := args.Verbose
+	deleteDirCrumbs := args.DeleteDirCrumbs
 
 	tmpl := template.Must(template.ParseFiles(args.InputFile))
 
@@ -51,7 +52,7 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("get manifest %s failed %v\n", args.Job, err)
 		}
 
-		err = doBreadcrumbs(tmpl, ret, args.Job, args.Suffix, verbose)
+		err = doBreadcrumbs(tmpl, ret, args.Job, args.Suffix, deleteDirCrumbs, verbose)
 		if err != nil {
 			return fmt.Errorf("could not list search results %v\n", err)
 		}
@@ -62,13 +63,28 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 	return nil
 }
 
-func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile, job string, suffix string, verbose bool) error {
+func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
+	job string, suffix string, deleteDirCrumbs bool, verbose bool) error {
 
 	currentContainingDirectory := ""
 	for fileIndex := range files {
 		file := files[fileIndex]
-		var f *os.File
 		fullPath := *file.Path + suffix
+		if *file.IsDir {
+			// dont create files for directories
+			if deleteDirCrumbs {
+				// old version left some? Remove them.
+				if verbose {
+					log.Printf("Delete directory crumbs: %s", fullPath)
+				}
+				err := os.Remove(fullPath)
+				if err != nil {
+					log.Printf("Failed to delete directory %s\n%v", fullPath, err)
+				}
+				continue
+			}
+		}
+		var f *os.File
 		// ensure directory exists on change
 		directory := filepath.Dir(fullPath)
 		if currentContainingDirectory != directory {

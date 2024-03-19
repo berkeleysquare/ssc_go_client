@@ -56,6 +56,7 @@ type Arguments struct {
 	LogFile              string
 	JobToPath            bool
 	Suffix               string
+	DeleteDirCrumbs      bool
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -94,6 +95,7 @@ func ParseArgs() (*Arguments, error) {
 	verbose := flag.Bool("verbose", false, "log output to console")
 	jobToPath := flag.Bool("jobToPath", false, "append manifest name to path")
 	suffix := flag.String("suffix", ".html", "suffix to append to breadcrumb file names")
+	deleteDirCrumbs := flag.Bool("delete_dir_crumbs", false, "tru to remove existing directory crumbs")
 	flag.Parse()
 
 	// Build the arguments object.
@@ -131,6 +133,7 @@ func ParseArgs() (*Arguments, error) {
 		LogFile:          *logFile,
 		JobToPath:        *jobToPath,
 		Suffix:           *suffix,
+		DeleteDirCrumbs:  *deleteDirCrumbs,
 	}
 	// Validate required arguments.
 	switch {
