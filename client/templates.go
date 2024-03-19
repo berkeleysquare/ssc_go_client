@@ -81,8 +81,8 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
 				if err != nil {
 					log.Printf("Failed to delete directory %s\n%v", fullPath, err)
 				}
-				continue
 			}
+			continue
 		}
 		var f *os.File
 		// ensure directory exists on change
