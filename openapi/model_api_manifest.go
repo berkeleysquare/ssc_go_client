@@ -15,15 +15,17 @@ package openapi
 type ApiManifestFile struct {
 	Name       *string `json:"name" xml:"name"`
 	Path       *string `json:"path,omitempty" xml:"path"`
+	IsDir      *bool   `json:"isDirectory,omitempty" xml:"isDirectory"`
 	Checksum   *string `json:"hash,omitempty" xml:"hash"`
 	Size       *int64  `json:"size,omitempty" xml:"size"`
 	RecordTime *string `json:"recordTime,omitempty" xml:"recordTime"`
 }
 
-func MakeApiManifestFile(name string, path string) *ApiManifestFile {
+func MakeApiManifestFile(name string, path string, isDir bool) *ApiManifestFile {
 	return &ApiManifestFile{
 		Name:     &name,
 		Path:     &path,
+		IsDir:    &isDir,
 		Checksum: nil,
 		Size:     nil,
 	}
