@@ -53,9 +53,11 @@ type Arguments struct {
 	OutputFile           string
 	InputFile            string
 	Verbose              bool
+	TemplateFile         string
 	LogFile              string
 	JobToPath            bool
 	Suffix               string
+	DeleteDirCrumbs      bool
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -64,7 +66,7 @@ func ParseArgs() (*Arguments, error) {
 
 	url := flag.String("url", TEST_URL, "Base REST endpoint path for StorCycle server")
 	name := flag.String("name", TEST_USER, "user name")
-	fileName := flag.String("file_name", "", "user name")
+	fileName := flag.String("file_name", "", "file name")
 	tag := flag.String("tag", "", "tag")
 	domain := flag.String("domain", TEST_DOMAIN, "domain")
 	password := flag.String("password", TEST_PASS, "user password")
@@ -89,11 +91,13 @@ func ParseArgs() (*Arguments, error) {
 	secretKeyParam := flag.String("secret_key", "", "Specifies the secret_key for the DS3 user.")
 	proxyParam := flag.String("proxy", "", "Specifies the HTTP proxy to route through.")
 	inputFile := flag.String("in", "", "input file")
+	templateFile := flag.String("template", "", "HTML template")
 	outputFile := flag.String("out", "", "output file")
 	logFile := flag.String("log", "", "log file")
 	verbose := flag.Bool("verbose", false, "log output to console")
 	jobToPath := flag.Bool("jobToPath", false, "append manifest name to path")
 	suffix := flag.String("suffix", ".html", "suffix to append to breadcrumb file names")
+	deleteDirCrumbs := flag.Bool("delete_dir_crumbs", false, "tru to remove existing directory crumbs")
 	flag.Parse()
 
 	// Build the arguments object.
@@ -127,10 +131,12 @@ func ParseArgs() (*Arguments, error) {
 		Proxy:            paramOrEnv(*proxyParam, "DS3_PROXY"),
 		OutputFile:       *outputFile,
 		InputFile:        *inputFile,
+		TemplateFile:     *templateFile,
 		Verbose:          *verbose,
 		LogFile:          *logFile,
 		JobToPath:        *jobToPath,
 		Suffix:           *suffix,
+		DeleteDirCrumbs:  *deleteDirCrumbs,
 	}
 	// Validate required arguments.
 	switch {
