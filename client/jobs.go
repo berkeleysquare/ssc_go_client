@@ -20,7 +20,7 @@ func RunNow(ssc *SscClient, args *Arguments) error {
 		fmt.Printf("Successfully set Run Now for %s\n", args.ProjectName)
 		return nil
 	}
-	return fmt.Errorf("run now failed for project %s\n%v\n",  args.ProjectName, err)
+	return fmt.Errorf("run now failed for project %s\n%v\n", args.ProjectName, err)
 }
 
 func displayJobs(jobs openapi.ApiJobPaginator) error {
@@ -65,6 +65,20 @@ func listJobs(ssc *SscClient, args *Arguments) error {
 	return displayJobs(response)
 }
 
+func listJobsForProject(ssc *SscClient, projectName string) error {
+	response, err := getJobsForProject(ssc, projectName)
+	if err != nil {
+		return fmt.Errorf("search jobs for project name %s failed %v\n", projectName, err)
+	}
+
+	return displayJobs(response)
+}
+
+func getJobsForProject(ssc *SscClient, projectName string) (openapi.ApiJobPaginator, error) {
+	ret, _, err := ssc.Client.ProjectApi.SearchJobs(*ssc.Context, projectName, nil)
+	return ret, err
+}
+
 func GetJobStatus(ssc *SscClient, args *Arguments) error {
 	response, _, err := ssc.Client.ProjectApi.GetJobStatus(*ssc.Context, args.Job)
 	if err != nil {
@@ -107,7 +121,6 @@ func GetRestoreJobsByTag(ssc *SscClient, args *Arguments) error {
 	return nil
 }
 
-
 func doRestoreJobsByTag(ssc *SscClient, match string, activeOnly bool) ([]string, error) {
 	jobType := "Restore"
 	if len(match) == 0 {
@@ -133,7 +146,7 @@ func doRestoreJobsByTag(ssc *SscClient, match string, activeOnly bool) ([]string
 
 func WaitForRestoreJobsByTag(ssc *SscClient, args *Arguments) error {
 	activeOnly := args.Command == "active_restore_jobs_by_tag" || args.Command == "wait_for_restore_jobs_by_tag"
-	err := tryRestoreJobsByTag(ssc, args.Tag, activeOnly,  args.Verbose, 13, 21)
+	err := tryRestoreJobsByTag(ssc, args.Tag, activeOnly, args.Verbose, 13, 21)
 	if err != nil {
 		return fmt.Errorf("tryRestoreJobsByTags() failed %v", err)
 	}

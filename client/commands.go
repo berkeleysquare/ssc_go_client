@@ -40,6 +40,8 @@ var availableCommands = map[string]command{
 	"head_object":                  headObject,
 	"inventory":                    listBucketContents,
 	"write_breadcrumbs":            writeBreadcrumbs,
+	"process_projects":             processProjects,
+	"breadcrumb_report":            breadcrumbReport,
 }
 
 // commands require only filesystem or BlackPearl access, no ssc client required

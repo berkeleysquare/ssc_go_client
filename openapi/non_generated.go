@@ -28,13 +28,12 @@ type ApiSearchProject struct {
 }
 
 type ApiSearchProjectPaginator struct {
-	ResultLimit int64 `json:"ResultLimit" xml:"ResultLimit"`
-	ResultOffset int64 `json:"ResultOffset" xml:"ResultOffset"`
-	Timestamp time.Time `json:"Timestamp" xml:"Timestamp"`
-	TotalResults int64 `json:"TotalResults" xml:"TotalResults"`
-	Data []ApiSearchProject `json:"data" xml:"data"`
+	ResultLimit  int64              `json:"ResultLimit" xml:"ResultLimit"`
+	ResultOffset int64              `json:"ResultOffset" xml:"ResultOffset"`
+	Timestamp    time.Time          `json:"Timestamp" xml:"Timestamp"`
+	TotalResults int64              `json:"TotalResults" xml:"TotalResults"`
+	Data         []ApiSearchProject `json:"data" xml:"data"`
 }
-
 
 /* ADDED BY JK -- NOT GENERATED */
 func (a *ProjectApiService) RunProjectNow(ctx _context.Context, projectName string) (*_nethttp.Response, error) {
@@ -50,7 +49,7 @@ func (a *ProjectApiService) RunProjectNow(ctx _context.Context, projectName stri
 	// non public API -- /api instead of /openapi
 	privateApiPath := strings.Replace(a.client.cfg.BasePath, "/openapi", "/api", 1)
 	localVarPath := privateApiPath + "/projects/runnow/{projectName}"
-	localVarPath = strings.Replace(localVarPath, "{"+"projectName"+"}", _neturl.QueryEscape(parameterToString(projectName, "")) , -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"projectName"+"}", _neturl.QueryEscape(parameterToString(projectName, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -123,63 +122,63 @@ func (a *ProjectApiService) RunProjectNow(ctx _context.Context, projectName stri
 }
 
 type ProjectApiListJobsOpts struct {
-	Limit int64
-	ProjectName string
+	Limit            int64
+	ProjectName      string
 	FileOrFolderName string
-	FilterBy string
-	SortType string
-	SortBy	string
+	FilterBy         string
+	SortType         string
+	SortBy           string
 }
 
 type ProjectApiListCatalogOpts struct {
 	Limit int64
-	Skip int64
+	Skip  int64
 }
 
 func MakeProjectApiListJobsOpts(projectName string) *ProjectApiListJobsOpts {
 	return &ProjectApiListJobsOpts{
-		Limit: 5000,
+		Limit:       5000,
 		ProjectName: projectName,
-		SortType: "ASC",
-		SortBy: "createdTime",
+		SortType:    "DESC",
+		SortBy:      "start",
 	}
 }
 
 func MakeProjectApiListAllJobsOpts(jobType string) *ProjectApiListJobsOpts {
 	return &ProjectApiListJobsOpts{
-		Limit: 5000,
+		Limit:    5000,
 		FilterBy: jobType,
 		SortType: "DESC",
-		SortBy: "created",
+		SortBy:   "created",
 	}
 }
 
 func MakeApiListJobsWithObjectsOpts(match string) *ProjectApiListJobsOpts {
 	return &ProjectApiListJobsOpts{
-		Limit: 1000,
+		Limit:            1000,
 		FileOrFolderName: match,
-		SortType: "DESC",
-		SortBy: "created",
+		SortType:         "DESC",
+		SortBy:           "created",
 	}
 }
 
 func MakeProjectApiListCatalogOpts(job string) *ProjectApiListCatalogOpts {
 	return &ProjectApiListCatalogOpts{
 		Limit: 5000,
-		Skip: 0,
+		Skip:  0,
 	}
 }
 
 type SearchApiProjectsOpts struct {
-	Tag string
-	Limit int64
+	Tag         string
+	Limit       int64
 	ProjectText string
 }
 
-func MakeSearchApiProjectsOpts(tag string) *SearchApiProjectsOpts{
+func MakeSearchApiProjectsOpts(tag string) *SearchApiProjectsOpts {
 	return &SearchApiProjectsOpts{
 		Limit: 5000,
-		Tag: tag,
+		Tag:   tag,
 	}
 }
 
@@ -289,7 +288,6 @@ func (a *ProjectApiService) SearchJobs(ctx _context.Context, projectName string,
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-
 /* ADDED BY JK -- NOT GENERATED */
 func (a *ProjectApiService) GetJobStatus(ctx _context.Context, jobName string) (ApiJobStatus, *_nethttp.Response, error) {
 	var (
@@ -385,7 +383,6 @@ func (a *ProjectApiService) GetJobStatus(ctx _context.Context, jobName string) (
 
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
-
 
 /* ADDED BY JK -- NOT GENERATED */
 func (a *ProjectApiService) SearchObjects(ctx _context.Context, match string, localVarOptionals *ProjectApiListJobsOpts) (ApiJobPaginator, *_nethttp.Response, error) {
@@ -492,7 +489,6 @@ func (a *ProjectApiService) SearchObjects(ctx _context.Context, match string, lo
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-
 /* ADDED BY JK -- NOT GENERATED */
 func (a *ProjectApiService) SearchProjects(ctx _context.Context, match string, localVarOptionals *SearchApiProjectsOpts) (ApiSearchProjectPaginator, *_nethttp.Response, error) {
 	var (
@@ -595,7 +591,6 @@ func (a *ProjectApiService) SearchProjects(ctx _context.Context, match string, l
 
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
-
 
 /* ADDED BY JK -- NOT GENERATED */
 func (a *ProjectApiService) GetCatalog(ctx _context.Context, job string, localVarOptionals *ProjectApiListCatalogOpts) (ApiManifestFilesPaginator, *_nethttp.Response, error) {
