@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"html/template"
@@ -8,8 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
-	"time"
+)
+
+const (
+	mailConfigFile = "mail_config.yaml"
 )
 
 type breadcrumbInfo struct {
@@ -30,88 +33,12 @@ func makeBreadcrumb(job string, file *openapi.ApiManifestFile) *breadcrumbInfo {
 	}
 }
 
-func makeStartFileName(jobName string) string {
-	return jobName + "_start.txt"
+type HasWarningsError struct {
+	message string
 }
 
-func makeSuccessFileName(jobName string) string {
-	return jobName + "_succeeded.txt"
-}
-
-func makeErrorFilename(jobName string) string {
-	return jobName + "_error.txt"
-}
-
-func createStartFile(jobName string) error {
-	filename := makeStartFileName(jobName)
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("Failed to create file %s\n%v", filename, err)
-	}
-	defer file.Close()
-
-	// Get the current time and format it as a timestamp
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	_, err = file.WriteString(timestamp + "\n")
-	if err != nil {
-		return fmt.Errorf("Failed to write to file %s\n%v", filename, err)
-	}
-	return nil
-}
-
-func startFileExists(jobName string) bool {
-	filename := makeStartFileName(jobName)
-	_, err := os.Stat(filename)
-	return err == nil
-}
-
-func successFileExists(jobName string) bool {
-	filename := makeSuccessFileName(jobName)
-	_, err := os.Stat(filename)
-	return err == nil
-}
-
-func errorFileExists(jobName string) bool {
-	filename := makeErrorFilename(jobName)
-	_, err := os.Stat(filename)
-	return err == nil
-}
-
-func createSuccessFile(jobName string, count int64) error {
-	filename := makeSuccessFileName(jobName)
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("Failed to create success file %s\n%v", filename, err)
-	}
-	defer file.Close()
-
-	// Get the current time and format it as a timestamp
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	_, err = file.WriteString(timestamp + ": wrote " + strconv.Itoa(int(count)) + " links." + "\n")
-	if err != nil {
-		return fmt.Errorf("Failed to write to success file %s\n%v", filename, err)
-	}
-	return nil
-}
-
-func createErrorFile(jobName string, jobError error) error {
-	filename := makeErrorFilename(jobName)
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("Failed to create success file %s\n%v", filename, err)
-	}
-	defer file.Close()
-
-	// Get the current time and format it as a timestamp
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	body := fmt.Sprintf("%s: ERROR %v\n", timestamp, jobError)
-	_, err = file.WriteString(body)
-	if err != nil {
-		return fmt.Errorf("Failed to write to error file %s\n%v", filename, err)
-	}
-	return nil
+func (e *HasWarningsError) Error() string {
+	return e.message
 }
 
 func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
@@ -166,7 +93,12 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 
 		err = doBreadcrumbs(tmpl, ret, job, args.Suffix, deleteDirCrumbs, verbose)
 		if err != nil {
-			return fmt.Errorf("could not list search results %v\n", err)
+			if errors.As(err, &HasWarningsError{}) {
+				// warnings, keep going
+				_ = createWarningFile(job, err.Error())
+			} else {
+				return fmt.Errorf("could not write breadcrumbs %v\n", err)
+			}
 		}
 		offset += limit
 		count += int64(len(ret))
@@ -182,6 +114,7 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
 	job string, suffix string, deleteDirCrumbs bool, verbose bool) error {
 
+	warnings := 0
 	currentContainingDirectory := ""
 	for fileIndex := range files {
 		file := files[fileIndex]
@@ -227,8 +160,14 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
 				log.Printf("Failed to close file %s\n", fullPath)
 			}
 		} else {
-			// log and move on
+			// increment warnings, log and move on
+			warnings++
 			log.Printf("ERROR: failed to create file %s\n%v", fullPath, err)
+		}
+	}
+	if warnings > 0 {
+		return &HasWarningsError{
+			message: fmt.Sprintf("WARNING: %d files not created for job %s\n", warnings, job),
 		}
 	}
 	return nil
@@ -318,69 +257,4 @@ func getJobsToProcess(ssc *SscClient, args *Arguments) (*ProjectJobMap, error) {
 		ret[projectName] = jobNames
 	}
 	return &ret, nil
-}
-
-func breadcrumbReport(ssc *SscClient, args *Arguments) error {
-	subject := "Breadcrumb Report: All Jobs Succeeded"
-	report, err := doBreadCrumbReport(ssc, args)
-	if err != nil {
-		subject = "Breadcrumb Report: Errors found"
-	}
-	return mailReport(args, subject, report)
-}
-
-func doBreadCrumbReport(ssc *SscClient, args *Arguments) ([]string, error) {
-	timestamp := time.Now().Format("2006-01-02 15:04:05")
-	ret := []string{timestamp + " started report"}
-	var line string
-	allSucceeded := true
-	verbose := args.Verbose
-
-	projects, err := getJobsToProcess(ssc, args)
-	if err != nil {
-		line = fmt.Sprintf("could not get projects %v", err)
-		ret = append(ret, line)
-		return ret, fmt.Errorf("%s", line)
-	}
-	ret = append(ret, fmt.Sprintf("Verifying %d projects", len(*projects)))
-	for projectName := range *projects {
-		ret = append(ret, fmt.Sprintf("Verifying project: %s", projectName))
-		for _, jobName := range (*projects)[projectName] {
-			if verbose {
-				ret = append(ret, fmt.Sprintf("Processing job: %s", jobName))
-			}
-			if successFileExists(jobName) {
-				if verbose {
-					ret = append(ret, fmt.Sprintf("Job %s for %s has completed", projectName, jobName))
-				}
-				continue
-			} else {
-				if errorFileExists(jobName) {
-					ret = append(ret, fmt.Sprintf("Job %s for %s has an error", projectName, jobName))
-					allSucceeded = false
-					continue
-				}
-				if startFileExists(jobName) {
-					ret = append(ret, fmt.Sprintf("Job %s for %s did not complete", projectName, jobName))
-					allSucceeded = false
-					continue
-				}
-				ret = append(ret, fmt.Sprintf("Job %s for %s has not started", projectName, jobName))
-			}
-		}
-	}
-	if allSucceeded {
-		ret = append(ret, fmt.Sprintf("All jobs succeeded"))
-		return ret, nil
-	}
-	return ret, fmt.Errorf("not all jobs succeeded")
-}
-
-func mailReport(args *Arguments, subject string, report []string) error {
-	// print to console
-	fmt.Printf("%s\n", subject)
-	for _, line := range report {
-		fmt.Println(line)
-	}
-	return nil
 }

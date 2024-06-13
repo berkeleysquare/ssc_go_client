@@ -1,0 +1,11 @@
+email:
+  server: emailsmarthost.spectralogic.com
+  port: 25
+  from: noreply@spectralogic.com
+  password:
+  authorization:
+message:
+  subject: Breadcrumb Report
+  template: mail/templates/YNH.html
+  to:
+   - johnk@spectralogic.com
