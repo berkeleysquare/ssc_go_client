@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta name="viewport" content="width=device-width"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Migration Status</title>
+    <style type="text/css">
+      body{
+        margin: 0 auto;
+        padding: 0;
+        min-width: 100%;
+        font-family: sans-serif;
+      }
+      table{
+        margin: 10px 0 10px 0;
+      }
+      .header{
+        height: 30px;
+        text-align: center;
+        text-transform: uppercase;
+        font-size: 24px;
+        font-weight: bold;
+        background-color: #68498e;
+        color: #eeeeee;
+      }
+      .content{
+        height: 40px;
+        font-size: 18px;
+        line-height: 20px;
+      }
+      .subscribe{
+        height: 70px;
+        text-align: center;
+      }
+      .button{
+        text-align: center;
+        font-size: 18px;
+        font-family: sans-serif;
+        font-weight: bold;
+        padding: 0 30px 0 30px;
+        background-color: #68498e;
+        color: #eeeeee;
+      }
+      .button a{
+        color: #FFFFFF;
+        text-decoration: none;
+      }
+      .buttonwrapper{
+        margin: 0 auto;
+      }
+      .footer{
+        text-transform: uppercase;
+        text-align: center;
+        height: 40px;
+        font-size: 14px;
+        font-style: italic;
+      }
+      .footer a{
+        color: #000000;
+        text-decoration: none;
+        font-style: normal;
+      }
+    </style>
+  </head>
+  <body bgcolor="#68498e">
+    <table bgcolor="#FFFFFF" width="100%" border="0" cellspacing="0" cellpadding="0">
+      <tr class="header">
+        <th colspan="2">{{ .Header }}</th>
+      </tr>
+      <tr class="content">
+        <td style="padding: 2px 2px 2px 2px;">
+          <table bgcolor="#EEEEEE" width="90%" border="1px" cellspacing="0" cellpadding="0">
+            {{range $y, $x := .Report}}
+            <div>
+              <tr>
+                <td>{{ $x }}</td>
+              </tr>
+            </div>
+            {{end}}
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
