@@ -50,9 +50,7 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 	if len(args.InputFile) == 0 {
 		return fmt.Errorf("no HTML template (--in) specified")
 	}
-	// backward compatibility; old version used --in for template
-	args.TemplateFile = args.InputFile
-	args.InputFile = ""
+
 	err := breadcrumbsForOneProject(ssc, args.Job, args)
 	if err != nil {
 		return fmt.Errorf("could not write breadcrumbs %v\n", err)
@@ -66,8 +64,8 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 	if len(job) == 0 {
 		return fmt.Errorf("no job name specified")
 	}
-	if len(args.TemplateFile) == 0 {
-		return fmt.Errorf("no HTML template (--template) specified")
+	if len(args.InputFile) == 0 {
+		return fmt.Errorf("no HTML template (--in) specified")
 	}
 	verbose := args.Verbose
 	deleteDirCrumbs := args.DeleteDirCrumbs
@@ -76,7 +74,7 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 	if err != nil {
 		return fmt.Errorf("could not create start file %v\n", err)
 	}
-	tmpl := template.Must(template.ParseFiles(args.TemplateFile))
+	tmpl := template.Must(template.ParseFiles(args.InputFile))
 
 	// iterate through all pages and extract just names
 	count := int64(0)
