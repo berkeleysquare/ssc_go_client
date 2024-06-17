@@ -53,7 +53,6 @@ type Arguments struct {
 	OutputFile           string
 	InputFile            string
 	Verbose              bool
-	TemplateFile         string
 	LogFile              string
 	JobToPath            bool
 	Suffix               string
@@ -91,7 +90,6 @@ func ParseArgs() (*Arguments, error) {
 	secretKeyParam := flag.String("secret_key", "", "Specifies the secret_key for the DS3 user.")
 	proxyParam := flag.String("proxy", "", "Specifies the HTTP proxy to route through.")
 	inputFile := flag.String("in", "", "input file")
-	templateFile := flag.String("template", "", "HTML template")
 	outputFile := flag.String("out", "", "output file")
 	logFile := flag.String("log", "", "log file")
 	verbose := flag.Bool("verbose", false, "log output to console")
@@ -131,7 +129,6 @@ func ParseArgs() (*Arguments, error) {
 		Proxy:            paramOrEnv(*proxyParam, "DS3_PROXY"),
 		OutputFile:       *outputFile,
 		InputFile:        *inputFile,
-		TemplateFile:     *templateFile,
 		Verbose:          *verbose,
 		LogFile:          *logFile,
 		JobToPath:        *jobToPath,
