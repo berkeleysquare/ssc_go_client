@@ -6,6 +6,6 @@ email:
   authorization:
 message:
   subject: Breadcrumb Report
-  template: mail/templates/YNH.html
+  template: templates/YNH_report.html
   to:
    - johnk@spectralogic.com
