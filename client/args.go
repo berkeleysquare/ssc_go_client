@@ -57,6 +57,7 @@ type Arguments struct {
 	JobToPath            bool
 	Suffix               string
 	DeleteDirCrumbs      bool
+	Encrypted            bool
 }
 
 func ParseArgs() (*Arguments, error) {
@@ -93,6 +94,7 @@ func ParseArgs() (*Arguments, error) {
 	outputFile := flag.String("out", "", "output file")
 	logFile := flag.String("log", "", "log file")
 	verbose := flag.Bool("verbose", false, "log output to console")
+	encrypted := flag.Bool("encrypted", false, "password is encrypted")
 	jobToPath := flag.Bool("jobToPath", false, "append manifest name to path")
 	suffix := flag.String("suffix", ".html", "suffix to append to breadcrumb file names")
 	deleteDirCrumbs := flag.Bool("delete_dir_crumbs", false, "tru to remove existing directory crumbs")
@@ -134,6 +136,7 @@ func ParseArgs() (*Arguments, error) {
 		JobToPath:        *jobToPath,
 		Suffix:           *suffix,
 		DeleteDirCrumbs:  *deleteDirCrumbs,
+		Encrypted:        *encrypted,
 	}
 	// Validate required arguments.
 	switch {

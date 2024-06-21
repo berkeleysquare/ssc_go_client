@@ -43,11 +43,13 @@ var availableCommands = map[string]command{
 	"process_projects":             processProjects,
 	"print_breadcrumb_report":      breadcrumbReport,
 	"mail_breadcrumb_report":       breadcrumbReport,
+	"crypt_password":               cryptPassword,
 }
 
 // commands require only filesystem or BlackPearl access, no ssc client required
 var noTokenRequired = map[string]bool{
 	"checksum_test_file": true,
+	"crypt_password":     true,
 	"directory_checksum": true,
 	"physical_placement": true,
 	"wait_for_placement": true,
