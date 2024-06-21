@@ -9,23 +9,31 @@ import (
 )
 
 type SscClient struct {
-	Client 		*openapi.APIClient
+	Client      *openapi.APIClient
 	Credentials *openapi.ApiCredentials
-	Context 	*context.Context
+	Context     *context.Context
 }
 
 func CreateClient(args *Arguments) (*SscClient, error) {
 	//  Create client
 	config := openapi.NewConfiguration(args.Url)
 	if args.IgnoreCert {
-		tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true},}
+		tr := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 		httpClient := &http.Client{Transport: tr}
 		config.HTTPClient = httpClient
 	}
 
 	storCycle := openapi.NewAPIClient(config)
+	plainPassword := args.Password
+	var err error
+	if args.Encrypted {
+		plainPassword, err = Decrypt(args.Password)
+		if err != nil {
+			return nil, fmt.Errorf("could not decrypt password %v\n", err)
+		}
+	}
 
-	creds := openapi.ApiCredentials{args.Domain, args.Password, args.Name}
+	creds := openapi.ApiCredentials{args.Domain, plainPassword, args.Name}
 	token, _, err := storCycle.AuthenticationApi.Login(context.TODO(), creds)
 	if err != nil {
 		fmt.Printf("Failed to get token %v\n", err)
@@ -37,10 +45,10 @@ func CreateClient(args *Arguments) (*SscClient, error) {
 }
 
 /*
-	Context should be request-scoped. But many simple, single request calls use the Context member
-	This method is preferred (and can update the token), but the legacy will work
+Context should be request-scoped. But many simple, single request calls use the Context member
+This method is preferred (and can update the token), but the legacy will work
 */
-func (sscClient SscClient)getContext(updateToken bool) (*context.Context, error) {
+func (sscClient SscClient) getContext(updateToken bool) (*context.Context, error) {
 	if !updateToken && sscClient.Context != nil {
 		return sscClient.Context, nil
 	}
@@ -52,7 +60,7 @@ func (sscClient SscClient)getContext(updateToken bool) (*context.Context, error)
 	return &ret, nil
 }
 
-func (sscClient SscClient)updateToken() (*SscClient, error) {
+func (sscClient SscClient) updateToken() (*SscClient, error) {
 	newCtx, err := sscClient.getContext(true)
 	if err != nil {
 		return nil, fmt.Errorf("could not get new token %v\n", err)
@@ -60,11 +68,10 @@ func (sscClient SscClient)updateToken() (*SscClient, error) {
 	return &SscClient{sscClient.Client, sscClient.Credentials, newCtx}, nil
 }
 
-func (sscClient SscClient)getToken() interface{} {
+func (sscClient SscClient) getToken() interface{} {
 	ctx := *sscClient.Context
 	return ctx.Value(openapi.ContextAccessToken)
 }
-
 
 func NowSchedule() *openapi.ApiProjectSchedule {
 	now := "Now"
@@ -73,7 +80,7 @@ func NowSchedule() *openapi.ApiProjectSchedule {
 
 // get validation errors available in GenericOpenAPIError
 func ExpandOpenApiErr(e error) error {
-	detailError, ok  := e.(openapi.GenericOpenAPIError)
+	detailError, ok := e.(openapi.GenericOpenAPIError)
 	if ok {
 		return fmt.Errorf("%v\n%s", detailError, detailError.Body())
 	}

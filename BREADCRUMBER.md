@@ -58,3 +58,15 @@ or:
 ```shell
 $ ssc-cli --url "https://localhost/openapi" --name "Administrator" --password spectra --ignore_cert --command "write_breadcrumbs" --job ArkHive-1 --in "templates/YNH.html" --start 0 --log ArkHive-1 --suffix ".ARCHIVE.html" --verbose
 ```
+## Encrypted Passwords
+BAT files and scheduled tasks can use encrypted passwords to protect credentials.
+
+To generate an encrypted password, use the following command:
+```shell    
+$ ssc-cli --command encrypt_password --password "spectra"
+```
+add the --encrypt option to the command line of any other method to specify
+that the password is encrypted. Example:
+```shell
+$ ssc-cli --command get_migrate_projects --url https://10.85.41.102/openapi --name Administrator --password mV=WgyVo/yiV== --encrypted --ignore_cert
+```
