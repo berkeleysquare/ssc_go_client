@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	mailConfigFile = "mail_config.yaml"
+	mailConfigFile   = "mail_config.yaml"
+	updateTokenEvery = 1_000_000
 )
 
 type breadcrumbInfo struct {
@@ -94,8 +95,9 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 	if verbose {
 		log.Printf("doGetManifest(%s)", job)
 	}
+	mySsc := ssc
 	for more {
-		ret, isTruncated, err := doGetManifest(ssc, job, offset, verbose)
+		ret, isTruncated, err := doGetManifest(mySsc, job, offset, verbose)
 		if err != nil {
 			return fmt.Errorf("get manifest %s failed %v\n", job, err)
 		}
@@ -112,6 +114,17 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 		offset += limit
 		count += int64(len(ret))
 		more = isTruncated
+
+		if more && offset%updateTokenEvery == 0 {
+			// update token
+			mySsc, err = mySsc.updateToken()
+			if err != nil {
+				return fmt.Errorf("could not update token after %d records %v\n", count, err)
+			}
+			if verbose {
+				log.Print("Updated token")
+			}
+		}
 	}
 	err = createSuccessFile(job, count)
 	if err != nil {
