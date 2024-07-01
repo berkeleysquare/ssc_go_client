@@ -88,6 +88,9 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 	}
 	tmpl := template.Must(template.ParseFiles(templateFile))
 
+	// so we can test errors for this type (I don't make the rules)
+	var warningErrorType *HasWarningsError
+
 	// iterate through all pages and extract just names
 	count := int64(0)
 	offset := int64(args.Start)
@@ -104,9 +107,10 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 
 		err = doBreadcrumbs(tmpl, ret, job, args.Suffix, deleteDirCrumbs, verbose)
 		if err != nil {
-			if errors.As(err, &HasWarningsError{}) {
+			if errors.As(err, &warningErrorType) {
 				// warnings, keep going
 				_ = createWarningFile(job, err.Error())
+				log.Printf("Warning in job %s: %s", job, err.Error())
 			} else {
 				return fmt.Errorf("could not write breadcrumbs %v\n", err)
 			}
