@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/SpectraLogic/ssc_go_client/mongo_client"
 	"github.com/SpectraLogic/ssc_go_client/openapi"
 	"log"
 	"os"
@@ -306,4 +307,30 @@ func displayJobObjectsV4(w *csv.Writer, jobs []openapi.ApiJob) error {
 		}
 	}
 	return w.WriteAll(lines)
+}
+
+func loadFilesForRestore(inputFile string) ([]*mongo_client.SearchObject, error) {
+	f, err := os.Open(inputFile)
+	if err != nil {
+		return nil, fmt.Errorf("could not open input file %s %v\n", inputFile, err)
+	}
+	defer f.Close()
+
+	// read whole file using csv.Reader
+	csvReader := csv.NewReader(f)
+	data, err := csvReader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("could not read from input file %s %v\n", inputFile, err)
+	}
+
+	// expect numbers in first column starting on second line
+	var ret []*mongo_client.SearchObject
+	for i, line := range data {
+		if i > 0 {
+			if len(line) >= 3 {
+				ret = append(ret, &mongo_client.SearchObject{Name: line[0], Manifest: line[1], Share: line[3]})
+			}
+		}
+	}
+	return ret, nil
 }

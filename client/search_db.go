@@ -160,3 +160,33 @@ func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, verbose bo
 	}
 	return ret
 }
+
+func restoreFromList(ssc *SscClient, args *Arguments) error {
+	var err error
+	verbose := args.Verbose
+	var fileNames []*mongo_client.SearchObject
+
+	if len(args.InputFile) > 0 {
+		fileNames, err = loadFilesForRestore(args.InputFile)
+		if err != nil {
+			return fmt.Errorf("could not load filenames from %s %v\n", args.InputFile, err)
+		}
+	} else {
+		return fmt.Errorf("no input file specified")
+	}
+	if len(args.Share) == 0 {
+		return fmt.Errorf("no share specified")
+	}
+	if verbose {
+		log.Printf("%d files to restore", len(fileNames))
+	}
+
+	//package results in apiJobs. One per job containing all job objects
+	jobObjects := makeJobObjectsByProject(fileNames, verbose)
+	err = doRestore(ssc, jobObjects, args.Share, args.InputFile, args.Directory, verbose)
+	if err != nil {
+		return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
+	}
+	log.Printf("Successfully ran Command\n")
+	return nil
+}
