@@ -43,6 +43,7 @@ var availableCommands = map[string]command{
 	"search_db":                    executeDbSearch,
 	"restore_db_objects":           executeDbSearch,
 	"restore_from_list":            restoreFromList,
+	"restore_from_quoted_list":     restoreFromList,
 }
 
 // commands require only filesystem or BlackPearl access, no ssc client required
