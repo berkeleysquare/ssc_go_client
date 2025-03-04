@@ -149,7 +149,11 @@ func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, isQuote bo
 		if !ok {
 			filesByShare[project] = []string{}
 		}
-		filesByShare[project] = append(filesByShare[project], obj.Name)
+		if isQuote {
+			filesByShare[project] = append(filesByShare[project], strings.Trim(obj.Name, "'\""))
+		} else {
+			filesByShare[project] = append(filesByShare[project], obj.Name)
+		}
 	}
 	for project, files := range filesByShare {
 		manifest := openapi.MakeApiJobWithProject(project, files)
