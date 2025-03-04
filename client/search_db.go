@@ -98,7 +98,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 
 		if restore {
 			//package results in apiJobs. One per job containing all job objects
-			jobObjects := makeJobObjectsByProject(ret, verbose)
+			jobObjects := makeJobObjectsByProject(ret, false, verbose)
 			err = doRestore(mySsc, jobObjects, args.Share, fileName, args.Directory, verbose)
 			if err != nil {
 				return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
