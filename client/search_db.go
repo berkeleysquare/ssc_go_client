@@ -135,6 +135,10 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 	return response, nil
 }
 
+func unquoteWindows(s string) string {
+	return strings.ReplaceAll(strings.Trim(s, "'\""), "\\\\", "\\")
+}
+
 func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, isQuote bool, verbose bool) []openapi.ApiJob {
 	filesByShare := make(map[string][]string)
 	// expect project name in the job without the -x suffix
@@ -150,7 +154,11 @@ func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, isQuote bo
 			filesByShare[project] = []string{}
 		}
 		if isQuote {
-			filesByShare[project] = append(filesByShare[project], strings.Trim(obj.Name, "'\""))
+			unquoted := unquoteWindows(obj.Name)
+			if verbose {
+				log.Printf("Unquoted %s to %s", obj.Name, unquoted)
+			}
+			filesByShare[project] = append(filesByShare[project], unquoted)
 		} else {
 			filesByShare[project] = append(filesByShare[project], obj.Name)
 		}
