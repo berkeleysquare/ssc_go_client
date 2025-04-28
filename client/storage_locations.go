@@ -6,6 +6,7 @@ import (
 	"github.com/antihax/optional"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,10 +18,12 @@ func getStorageLocations(ssc *SscClient, opts *openapi.StorageApiListStorageLoca
 	return ssc.Client.StorageApi.ListStorageLocations(*ssc.Context, opts)
 }
 
-func displayStorageLocations(locations openapi.ApiStorageLocationPaginator) error {
+func displayStorageLocations(locations openapi.ApiStorageLocationPaginator, prefix string) error {
 	for locationIndex := range locations.Data {
 		location := locations.Data[locationIndex]
-		fmt.Printf("Location: %s, type: %s, isTarget: %s\n", *location.Name, *location.Type, strconv.FormatBool(*location.IsTarget))
+		if len(prefix) == 0 || strings.HasPrefix(*location.Name, prefix) {
+			fmt.Printf("%s, type: %s, isTarget: %s\n", *location.Name, *location.Type, strconv.FormatBool(*location.IsTarget))
+		}
 	}
 	return nil
 }
@@ -35,7 +38,7 @@ func ListStorageLocations(ssc *SscClient, args *Arguments) error {
 	if err != nil {
 		return fmt.Errorf("could not retrieve storage locations (%d) %v\n", resp.StatusCode, err)
 	}
-	return displayStorageLocations(locations)
+	return displayStorageLocations(locations, args.Prefix)
 }
 
 func CreateTargetLocation(ssc *SscClient, args *Arguments) error {
