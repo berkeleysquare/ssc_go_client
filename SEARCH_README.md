@@ -110,8 +110,33 @@ Same syntax as restore_objects, but the command is restore_db_objects:
 ```shell
 $ ssc-cli --url https://localhost/openapi --name Administrator --password spectra --ignore_cert --command restore_db_objects --file_name picnic -ext mp4 --share Restorey --directory /testAuto --out myFiles.csv
 ```
-NOTE: --ext * or not imncluding the --ext parameter will return all that match the file name string 
-on the search_db amd restore_db_objects commands.
+NOTE: --ext * or not including the --ext parameter will return all that match the file name string 
+on the search_db and restore_db_objects commands.
+
+### Fast (pinned) Search and Restore
+Searching a large database for an occurrence of a string anywhere 
+in the path can be slow. "Pinning" the search to the start of a 
+component path (directory name or file name) can speed up the search
+-- seconds vs. tens of minutes -- in large DBs.
+
+The search_db and restore_db_objects commands accept a --fast_search 
+parameter. If included, the search will be pinned to the start of
+a component path.
+
+E.g., --file_name "picnic" --fast_search will  match
+\\share\users\jk\picnic\recipes.txt
+\\share\users\jk\family\picnic.jpg
+
+But not
+\\share\users\jk\family_picnic\recipes.txt
+
+Omitting the --fast_search parameter will match all of the above.
+
+```shell
+
+
+
+
 
 ### Find and cancel restore jobs
 Find all active restore jobs

@@ -10,6 +10,8 @@ var availableCommands = map[string]command{
 	"full_verify":                  FullVerifyCycle,
 	"get_locations":                ListStorageLocations,
 	"create_target":                CreateTargetLocation,
+	"retire_location":              ChangeLocationState,
+	"reinstate_location":           ChangeLocationState,
 	"create_source":                CreateSourceLocation,
 	"create_test_file":             CreateTestFile,
 	"run_project_now":              RunNow,
@@ -42,6 +44,8 @@ var availableCommands = map[string]command{
 	"inventory":                    listBucketContents,
 	"search_db":                    executeDbSearch,
 	"restore_db_objects":           executeDbSearch,
+	"restore_from_list":            restoreFromList,
+	"restore_from_quoted_list":     restoreFromList,
 }
 
 // commands require only filesystem or BlackPearl access, no ssc client required

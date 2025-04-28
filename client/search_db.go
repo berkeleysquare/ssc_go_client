@@ -8,7 +8,15 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
 )
+
+func pinSearchToStart(raw string, fastFlag bool) string {
+	if !fastFlag || strings.HasPrefix(raw, "^") {
+		return raw
+	}
+	return "^" + raw
+}
 
 func executeDbSearch(ssc *SscClient, args *Arguments) error {
 
@@ -17,6 +25,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 	exts := []string(args.Extensions)
 	verbose := args.Verbose
 	restore := args.Command == "restore_db_objects"
+	fast := args.FastSearch
 
 	// fileName runs once, inputFile iterates through CSV
 	if len(args.FileName) > 0 {
@@ -62,7 +71,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 	}
 
 	for fileNameIndex := range fileNames {
-		fileName := fileNames[fileNameIndex]
+		fileName := pinSearchToStart(fileNames[fileNameIndex], fast)
 		// update token
 		mySsc, err := ssc.updateToken()
 		if err != nil {
@@ -89,7 +98,7 @@ func executeDbSearch(ssc *SscClient, args *Arguments) error {
 
 		if restore {
 			//package results in apiJobs. One per job containing all job objects
-			jobObjects := makeJobObjectsByProject(ret, verbose)
+			jobObjects := makeJobObjectsByProject(ret, false, verbose)
 			err = doRestore(mySsc, jobObjects, args.Share, fileName, args.Directory, verbose)
 			if err != nil {
 				return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
@@ -126,7 +135,11 @@ func doDbSearch(ssc *SscClient, FileName string, exts []string, verbose bool) ([
 	return response, nil
 }
 
-func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, verbose bool) []openapi.ApiJob {
+func unquoteWindows(s string) string {
+	return strings.ReplaceAll(strings.Trim(s, "'\""), "\\\\", "\\")
+}
+
+func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, isQuote bool, verbose bool) []openapi.ApiJob {
 	filesByShare := make(map[string][]string)
 	// expect project name in the job without the -x suffix
 	re := regexp.MustCompile(`-\d+$`)
@@ -140,7 +153,15 @@ func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, verbose bo
 		if !ok {
 			filesByShare[project] = []string{}
 		}
-		filesByShare[project] = append(filesByShare[project], obj.Name)
+		if isQuote {
+			unquoted := unquoteWindows(obj.Name)
+			if verbose {
+				log.Printf("Unquoted %s to %s", obj.Name, unquoted)
+			}
+			filesByShare[project] = append(filesByShare[project], unquoted)
+		} else {
+			filesByShare[project] = append(filesByShare[project], obj.Name)
+		}
 	}
 	for project, files := range filesByShare {
 		manifest := openapi.MakeApiJobWithProject(project, files)
@@ -150,4 +171,35 @@ func makeJobObjectsByProject(searchObjs []*mongo_client.SearchObject, verbose bo
 		ret = append(ret, *manifest)
 	}
 	return ret
+}
+
+func restoreFromList(ssc *SscClient, args *Arguments) error {
+	var err error
+	verbose := args.Verbose
+	var fileNames []*mongo_client.SearchObject
+	isQuoted := args.Command == "restore_from_quoted_list"
+
+	if len(args.InputFile) > 0 {
+		fileNames, err = loadFilesForRestore(args.InputFile)
+		if err != nil {
+			return fmt.Errorf("could not load filenames from %s %v\n", args.InputFile, err)
+		}
+	} else {
+		return fmt.Errorf("no input file specified")
+	}
+	if len(args.Share) == 0 {
+		return fmt.Errorf("no share specified")
+	}
+	if verbose {
+		log.Printf("%d files to restore", len(fileNames))
+	}
+
+	//package results in apiJobs. One per job containing all job objects
+	jobObjects := makeJobObjectsByProject(fileNames, isQuoted, verbose)
+	err = doRestore(ssc, jobObjects, args.Share, args.InputFile, args.Directory, verbose)
+	if err != nil {
+		return fmt.Errorf("failed to create restore jobs for %s %v\n", args.FileName, err)
+	}
+	log.Printf("Successfully ran Command\n")
+	return nil
 }
