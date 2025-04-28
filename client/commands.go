@@ -10,6 +10,8 @@ var availableCommands = map[string]command{
 	"full_verify":                  FullVerifyCycle,
 	"get_locations":                ListStorageLocations,
 	"create_target":                CreateTargetLocation,
+	"retire_location":              ChangeLocationState,
+	"reinstate_location":           ChangeLocationState,
 	"create_source":                CreateSourceLocation,
 	"create_test_file":             CreateTestFile,
 	"run_project_now":              RunNow,
