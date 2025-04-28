@@ -140,10 +140,15 @@ func ChangeLocationState(ssc *SscClient, args *Arguments) error {
 	if args.Command == "retire_location" {
 		newState = "retired"
 	}
-	_, _, err = ssc.Client.StorageApi.UpdateStorageLocationState(*ssc.Context, name, newState)
+
+	_, code, err := ssc.Client.StorageApi.UpdateStorageLocationState(*ssc.Context, name, newState)
 	if err != nil {
-		return fmt.Errorf("failed to updatye location (%s) %v\n", name, err)
+		if code.StatusCode == http.StatusNotModified {
+			fmt.Printf("State of %s is already %s\n", name, newState)
+			return nil
+		}
+		return fmt.Errorf("failed to update location (%s) %v\n", name, err)
 	}
-	fmt.Printf("Successfully updated state of %s\n", name)
+	fmt.Printf("Successfully updated state of %s to %s\n", name, newState)
 	return nil
 }

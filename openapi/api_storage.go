@@ -474,7 +474,7 @@ func (a *StorageApiService) UpdateNasStorageLocation(ctx _context.Context, stora
 /* ADDED BY JK -- NOT GENERATED */
 func (a *StorageApiService) UpdateStorageLocationState(ctx _context.Context, storageLocationName string, newState string) (ApiStorageLocation, *_nethttp.Response, error) {
 	var (
-		localVarHTTPMethod   = _nethttp.MethodPut
+		localVarHTTPMethod   = _nethttp.MethodPatch
 		localVarPostBody 	 interface{} = map[string]interface{}{} // Empty payload
 		localVarFormFileName string
 		localVarFileName     string
