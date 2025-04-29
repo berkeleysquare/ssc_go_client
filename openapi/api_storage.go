@@ -46,7 +46,9 @@ func (a *StorageApiService) GetStorageLocation(ctx _context.Context, storageLoca
 
 	// create path and map variables
 	localVarPath := a.client.cfg.BasePath + "/storage-locations/{storageLocationName}"
-	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", _neturl.QueryEscape(parameterToString(storageLocationName, "")) , -1)
+	encoded := _neturl.QueryEscape(parameterToString(storageLocationName, ""))
+	encoded = strings.Replace(encoded, "+", "%20", -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", encoded , -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -259,7 +261,10 @@ func (a *StorageApiService) UpdateStorageLocation(ctx _context.Context, storageL
 
 	// create path and map variables
 	localVarPath := a.client.cfg.BasePath + "/storage-locations/{storageLocationName}"
-	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", _neturl.QueryEscape(parameterToString(storageLocationName, "")) , -1)
+	encoded := _neturl.QueryEscape(parameterToString(storageLocationName, ""))
+	encoded = strings.Replace(encoded, "+", "%20", -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", encoded , -1)
+
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -373,7 +378,9 @@ func (a *StorageApiService) UpdateNasStorageLocation(ctx _context.Context, stora
 
 	// create path and map variables
 	localVarPath := a.client.cfg.BasePath + "/storage-locations/{storageLocationName}"
-	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", _neturl.QueryEscape(parameterToString(storageLocationName, "")) , -1)
+	encoded := _neturl.QueryEscape(parameterToString(storageLocationName, ""))
+	encoded = strings.Replace(encoded, "+", "%20", -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", encoded , -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -484,7 +491,10 @@ func (a *StorageApiService) UpdateStorageLocationState(ctx _context.Context, sto
 
 	// create path and map variables
 	localVarPath := a.client.cfg.BasePath + "/storage-locations/{storageLocationName}/state"
-	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", _neturl.QueryEscape(parameterToString(storageLocationName, "")) , -1)
+	encoded := _neturl.QueryEscape(parameterToString(storageLocationName, ""))
+	encoded = strings.Replace(encoded, "+", "%20", -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"storageLocationName"+"}", encoded , -1)
+
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
