@@ -231,6 +231,8 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 	for fileIndex := range files {
 		file := files[fileIndex]
 		fullPath := *file.Path + suffix
+		// one customer has breadcrumbs with file.ext(1).html
+		extraBreadcrumbPath := fullPath + "(1)" + suffix
 		if *file.IsDir {
 			// dont create files for directories
 			if deleteDirCrumbs {
@@ -241,6 +243,11 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 				err := os.Remove(fullPath)
 				if err != nil {
 					log.Printf("Failed to delete directory %s\n%v", fullPath, err)
+				}
+				// remove extra if it is not there, but do not log if not
+				err = os.Remove(extraBreadcrumbPath)
+				if err != nil && !os.IsNotExist(err) {
+					log.Printf("Failed to delete directory %s\n%v", extraBreadcrumbPath, err)
 				}
 			}
 			continue
