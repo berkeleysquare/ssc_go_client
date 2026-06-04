@@ -60,6 +60,21 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 	return nil
 }
 
+func deleteBreadcrumbs(ssc *SscClient, args *Arguments) error {
+
+	// required params
+	if len(args.Job) == 0 {
+		return fmt.Errorf("no job name (--job) specified")
+	}
+
+	err := breadcrumbsForOneProject(ssc, args.Job, args)
+	if err != nil {
+		return fmt.Errorf("could not write breadcrumbs %v\n", err)
+	}
+	fmt.Printf("\nSuccessfully ran Command\n")
+	return nil
+}
+
 func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error {
 	// required params
 	if len(job) == 0 {
@@ -73,7 +88,7 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 			return fmt.Errorf("no HTML template (--in) specified")
 		}
 		templateFile = args.InputFile
-	} else {
+	} else if args.Command != "delete_breadcrumbs" {
 		if len(args.TemplateFile) == 0 {
 			return fmt.Errorf("no HTML template (--template) specified")
 		}
@@ -86,7 +101,10 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 	if err != nil {
 		return fmt.Errorf("could not create start file %v\n", err)
 	}
-	tmpl := template.Must(template.ParseFiles(templateFile))
+	var tmpl *template.Template
+	if args.Command != "delete_breadcrumbs" {
+		tmpl = template.Must(template.ParseFiles(templateFile))
+	}
 
 	// so we can test errors for this type (I don't make the rules)
 	var warningErrorType *HasWarningsError
@@ -105,14 +123,21 @@ func breadcrumbsForOneProject(ssc *SscClient, job string, args *Arguments) error
 			return fmt.Errorf("get manifest %s failed %v\n", job, err)
 		}
 
-		err = doBreadcrumbs(tmpl, ret, job, args.Suffix, deleteDirCrumbs, verbose)
+		var operation string
+		if args.Command == "delete_breadcrumbs" {
+			operation = "delete"
+			err = doDeleteBreadcrumbs(ret, job, args.Suffix, deleteDirCrumbs, verbose)
+		} else {
+			operation = "write"
+			err = doBreadcrumbs(tmpl, ret, job, args.Suffix, deleteDirCrumbs, verbose)
+		}
 		if err != nil {
 			if errors.As(err, &warningErrorType) {
 				// warnings, keep going
 				_ = createWarningFile(job, err.Error())
 				log.Printf("Warning in job %s: %s", job, err.Error())
 			} else {
-				return fmt.Errorf("could not write breadcrumbs %v\n", err)
+				return fmt.Errorf("could not %s breadcrumbs %v\n", operation, err)
 			}
 		}
 		offset += limit
@@ -194,6 +219,43 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
 	if warnings > 0 {
 		return &HasWarningsError{
 			message: fmt.Sprintf("WARNING: %d files not created for job %s\n", warnings, job),
+		}
+	}
+	return nil
+}
+
+func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
+	job string, suffix string, deleteDirCrumbs bool, verbose bool) error {
+
+	warnings := 0
+	for fileIndex := range files {
+		file := files[fileIndex]
+		fullPath := *file.Path + suffix
+		if *file.IsDir {
+			// dont create files for directories
+			if deleteDirCrumbs {
+				// old version left some? Remove them.
+				if verbose {
+					log.Printf("Delete directory crumbs: %s", fullPath)
+				}
+				err := os.Remove(fullPath)
+				if err != nil {
+					log.Printf("Failed to delete directory %s\n%v", fullPath, err)
+				}
+			}
+			continue
+		}
+
+		err := os.Remove(fullPath)
+		if err != nil {
+			// increment warnings, log and move on
+			warnings++
+			log.Printf("ERROR: failed to delete file %s\n%v", fullPath, err)
+		}
+	}
+	if warnings > 0 {
+		return &HasWarningsError{
+			message: fmt.Sprintf("WARNING: %d files not eeleted for job %s\n", warnings, job),
 		}
 	}
 	return nil
