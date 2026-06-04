@@ -40,6 +40,7 @@ var availableCommands = map[string]command{
 	"head_object":                  headObject,
 	"inventory":                    listBucketContents,
 	"write_breadcrumbs":            writeBreadcrumbs,
+	"delete_breadcrumbs":           deleteBreadcrumbs,
 	"process_projects":             processProjects,
 	"print_breadcrumb_report":      breadcrumbReport,
 	"mail_breadcrumb_report":       breadcrumbReport,
