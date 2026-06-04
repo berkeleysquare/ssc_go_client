@@ -244,14 +244,6 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 				if err != nil {
 					log.Printf("Failed to delete directory %s\n%v", fullPath, err)
 				}
-				// remove extra if it is not there, but do not log if not
-				err = os.Remove(extraBreadcrumbPath)
-				if err != nil && !os.IsNotExist(err) {
-					log.Printf("Failed to delete directory %s\n%v", extraBreadcrumbPath, err)
-				}
-				if verbose {
-					log.Printf("Delete crumbs: %s %s", fullPath, extraBreadcrumbPath)
-				}
 			}
 			continue
 		}
@@ -261,6 +253,14 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 			// increment warnings, log and move on
 			warnings++
 			log.Printf("ERROR: failed to delete file %s\n%v", fullPath, err)
+		}
+		// remove extra if it is not there, but do not log if not
+		err = os.Remove(extraBreadcrumbPath)
+		if err != nil && !os.IsNotExist(err) {
+			log.Printf("Failed to delete directory %s\n%v", extraBreadcrumbPath, err)
+		}
+		if verbose {
+			log.Printf("Delete crumbs: %s %s", fullPath, extraBreadcrumbPath)
 		}
 	}
 	if warnings > 0 {
