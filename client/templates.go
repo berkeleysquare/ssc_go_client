@@ -232,7 +232,7 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 		file := files[fileIndex]
 		fullPath := *file.Path + suffix
 		// one customer has breadcrumbs with file.ext(1).html
-		extraBreadcrumbPath := fullPath + "(1)" + suffix
+		extraBreadcrumbPath := *file.Path + "(1)" + suffix
 		if *file.IsDir {
 			// dont create files for directories
 			if deleteDirCrumbs {
