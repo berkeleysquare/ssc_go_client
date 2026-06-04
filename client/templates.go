@@ -69,7 +69,7 @@ func deleteBreadcrumbs(ssc *SscClient, args *Arguments) error {
 
 	err := breadcrumbsForOneProject(ssc, args.Job, args)
 	if err != nil {
-		return fmt.Errorf("could not write breadcrumbs %v\n", err)
+		return fmt.Errorf("could not delete breadcrumbs %v\n", err)
 	}
 	fmt.Printf("\nSuccessfully ran Command\n")
 	return nil
@@ -249,6 +249,9 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 				if err != nil && !os.IsNotExist(err) {
 					log.Printf("Failed to delete directory %s\n%v", extraBreadcrumbPath, err)
 				}
+				if verbose {
+					log.Printf("Delete crumbs: %s %s", fullPath, extraBreadcrumbPath)
+				}
 			}
 			continue
 		}
@@ -262,7 +265,7 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 	}
 	if warnings > 0 {
 		return &HasWarningsError{
-			message: fmt.Sprintf("WARNING: %d files not eeleted for job %s\n", warnings, job),
+			message: fmt.Sprintf("WARNING: %d files not deleted for job %s\n", warnings, job),
 		}
 	}
 	return nil
