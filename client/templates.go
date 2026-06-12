@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 )
 
@@ -251,9 +252,12 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
 func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 	job string, suffix string, deleteDirCrumbs bool, verbose bool) error {
 
+	var timestampRe = regexp.MustCompile(`-\d{12,14}`)
+
 	warnings := 0
 	for fileIndex := range files {
 		file := files[fileIndex]
+		fullPathNoTimestamp := timestampRe.ReplaceAllString(*file.Path, "") + suffix
 		fullPath := *file.Path + suffix
 		// one customer has breadcrumbs with file.ext(1).html
 		extraBreadcrumbPath := *file.Path + "(1)" + suffix
@@ -282,6 +286,13 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 		err = os.Remove(extraBreadcrumbPath)
 		if err != nil && !os.IsNotExist(err) {
 			log.Printf("Failed to delete directory %s\n%v", extraBreadcrumbPath, err)
+		}
+		// some legacy breadcrumbs have timestamps in the name, remove those too if they exist, but do not log if not
+		if fullPath != fullPathNoTimestamp {
+			err = os.Remove(fullPathNoTimestamp)
+			if err != nil && !os.IsNotExist(err) {
+				log.Printf("Failed to delete %s\n%v", fullPathNoTimestamp, err)
+			}
 		}
 		if verbose {
 			log.Printf("Delete crumbs: %s %s", fullPath, extraBreadcrumbPath)
