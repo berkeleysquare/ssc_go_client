@@ -78,12 +78,15 @@ func deleteBreadcrumbs(ssc *SscClient, args *Arguments) error {
 		if err != nil {
 			return fmt.Errorf("search objects for match %s failed %v\n", args.ProjectName, err)
 		}
-		jobs := make([]string, len(response.Data))
+		fmt.Printf("Processing %d jobs\n", len(response.Data))
+		jobs = make([]string, len(response.Data))
 		for jobIndex := range response.Data {
 			job := response.Data[jobIndex]
 			jobs[jobIndex] = *job.Name
 		}
 	}
+
+	fmt.Printf("Deleting breadcrumbs for %d jobs\n", len(jobs))
 
 	for jobIndex := range jobs {
 		job := jobs[jobIndex]
