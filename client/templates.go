@@ -63,15 +63,39 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 func deleteBreadcrumbs(ssc *SscClient, args *Arguments) error {
 
 	// required params
-	if len(args.Job) == 0 {
-		return fmt.Errorf("no job name (--job) specified")
+	if len(args.Job) == 0 && len(args.ProjectName) == 0 {
+		return fmt.Errorf("no job name (--job) or project (--project_name) specified")
 	}
 
-	err := breadcrumbsForOneProject(ssc, args.Job, args)
-	if err != nil {
-		return fmt.Errorf("could not delete breadcrumbs %v\n", err)
+	var jobs []string
+	jobCount := 0
+
+	if len(args.Job) > 0 {
+		jobs = []string{args.Job}
+	} else {
+		response, err := getJobsForProject(ssc, args.ProjectName)
+		if err != nil {
+			return fmt.Errorf("search objects for match %s failed %v\n", args.ProjectName, err)
+		}
+		jobs := make([]string, len(response.Data))
+		for jobIndex := range response.Data {
+			job := response.Data[jobIndex]
+			jobs[jobIndex] = *job.Name
+		}
 	}
-	fmt.Printf("\nSuccessfully ran Command\n")
+
+	for jobIndex := range jobs {
+		job := jobs[jobIndex]
+		err := breadcrumbsForOneProject(ssc, job, args)
+		if err != nil {
+			return fmt.Errorf("could not delete breadcrumbs for job %s, %v\n", job, err)
+		}
+		jobCount++
+		fmt.Printf("\nSuccessfully ran Command fo job %s\n", job)
+	}
+	if jobCount > 1 {
+		fmt.Printf("\nSuccessfully ran Command for %d jobs\n", jobCount)
+	}
 	return nil
 }
 
