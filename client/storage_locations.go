@@ -20,15 +20,19 @@ func getStorageLocations(ssc *SscClient, opts *openapi.StorageApiListStorageLoca
 func displayStorageLocations(locations openapi.ApiStorageLocationPaginator) error {
 	for locationIndex := range locations.Data {
 		location := locations.Data[locationIndex]
-		fmt.Printf("Location: %s, type: %s, isTarget: %s\n", *location.Name, *location.Type, strconv.FormatBool(*location.IsTarget))
+		retention := "N/A"
+		if location.RetentionDays != nil {
+			retention = strconv.Itoa(int(*location.RetentionDays))
+		}
+		fmt.Printf("Location: %s, type: %s, isTarget: %s, retentionDays: %s\n", *location.Name, *location.Type, strconv.FormatBool(*location.IsTarget), retention)
 	}
 	return nil
 }
 
 func ListStorageLocations(ssc *SscClient, args *Arguments) error {
 	opts := &openapi.StorageApiListStorageLocationsOpts{
-		Skip:	optional.NewInt64(int64(args.Start)),
-		Limit:	optional.NewInt64(int64(args.Count)),
+		Skip:  optional.NewInt64(int64(args.Start)),
+		Limit: optional.NewInt64(int64(args.Count)),
 	}
 
 	locations, resp, err := getStorageLocations(ssc, opts)
@@ -41,7 +45,7 @@ func ListStorageLocations(ssc *SscClient, args *Arguments) error {
 func CreateTargetLocation(ssc *SscClient, args *Arguments) error {
 	// Clone a BP object endpoint
 	if len(args.Clone) == 0 {
-		return fmt.Errorf("no target location specified to provide credentials to copy" )
+		return fmt.Errorf("no target location specified to provide credentials to copy")
 	}
 
 	name := ValueOrDefault(args.Target, TEST_TARGET_NAME)
@@ -69,12 +73,11 @@ func CreateTargetLocation(ssc *SscClient, args *Arguments) error {
 	sourceDefinition := &openapi.ApiStorageLocationBlackPearl{
 		SpectraMgmtEndpoint: mgmtEndpoint,
 		SpectraDataEndpoint: dataEndpoint,
-		Description:    	 &description,
-		Bucket:				 &testBucketName,
-		Type:				 &locationType,
-		IsTarget:			 &locationIsTarget,
+		Description:         &description,
+		Bucket:              &testBucketName,
+		Type:                &locationType,
+		IsTarget:            &locationIsTarget,
 	}
-
 
 	varOptions := &openapi.StorageApiUpdateStorageLocationOpts{
 		CloneCredentials: optional.NewString(args.Clone),
@@ -91,7 +94,7 @@ func CreateTargetLocation(ssc *SscClient, args *Arguments) error {
 func CreateSourceLocation(ssc *SscClient, args *Arguments) error {
 
 	if len(args.Directory) == 0 {
-		return fmt.Errorf("no source path specified" )
+		return fmt.Errorf("no source path specified")
 	}
 
 	name := ValueOrDefault(args.Share, TEST_SOURCE_NAME)
@@ -103,17 +106,16 @@ func CreateSourceLocation(ssc *SscClient, args *Arguments) error {
 		return nil
 	}
 
-
 	timestamp := string(time.Now().Format("06-01-02-15-04-05"))
 	description := fmt.Sprintf("%s, Created by Verify Test %s", name, timestamp)
 	locationType := "NAS"
 	locationIsTarget := false
 
 	sourceDefinition := &openapi.ApiStorageLocationNas{
-		Description:    	 &description,
-		Path:				 &args.Directory,
-		Type:				 &locationType,
-		IsTarget:			 &locationIsTarget,
+		Description: &description,
+		Path:        &args.Directory,
+		Type:        &locationType,
+		IsTarget:    &locationIsTarget,
 	}
 
 	_, _, err = ssc.Client.StorageApi.UpdateNasStorageLocation(*ssc.Context, name, *sourceDefinition)
