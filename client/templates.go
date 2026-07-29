@@ -95,7 +95,7 @@ func deleteBreadcrumbs(ssc *SscClient, args *Arguments) error {
 			return fmt.Errorf("could not delete breadcrumbs for job %s, %v\n", job, err)
 		}
 		jobCount++
-		fmt.Printf("\nSuccessfully ran Command fo job %s\n", job)
+		fmt.Printf("\nSuccessfully ran Command for job %s\n", job)
 	}
 	if jobCount > 1 {
 		fmt.Printf("\nSuccessfully ran Command for %d jobs\n", jobCount)
