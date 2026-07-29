@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 )
 
@@ -63,15 +64,42 @@ func writeBreadcrumbs(ssc *SscClient, args *Arguments) error {
 func deleteBreadcrumbs(ssc *SscClient, args *Arguments) error {
 
 	// required params
-	if len(args.Job) == 0 {
-		return fmt.Errorf("no job name (--job) specified")
+	if len(args.Job) == 0 && len(args.ProjectName) == 0 {
+		return fmt.Errorf("no job name (--job) or project (--project_name) specified")
 	}
 
-	err := breadcrumbsForOneProject(ssc, args.Job, args)
-	if err != nil {
-		return fmt.Errorf("could not delete breadcrumbs %v\n", err)
+	var jobs []string
+	jobCount := 0
+
+	if len(args.Job) > 0 {
+		jobs = []string{args.Job}
+	} else {
+		response, err := getJobsForProject(ssc, args.ProjectName)
+		if err != nil {
+			return fmt.Errorf("search objects for match %s failed %v\n", args.ProjectName, err)
+		}
+		fmt.Printf("Processing %d jobs\n", len(response.Data))
+		jobs = make([]string, len(response.Data))
+		for jobIndex := range response.Data {
+			job := response.Data[jobIndex]
+			jobs[jobIndex] = *job.Name
+		}
 	}
-	fmt.Printf("\nSuccessfully ran Command\n")
+
+	fmt.Printf("Deleting breadcrumbs for %d jobs\n", len(jobs))
+
+	for jobIndex := range jobs {
+		job := jobs[jobIndex]
+		err := breadcrumbsForOneProject(ssc, job, args)
+		if err != nil {
+			return fmt.Errorf("could not delete breadcrumbs for job %s, %v\n", job, err)
+		}
+		jobCount++
+		fmt.Printf("\nSuccessfully ran Command for job %s\n", job)
+	}
+	if jobCount > 1 {
+		fmt.Printf("\nSuccessfully ran Command for %d jobs\n", jobCount)
+	}
 	return nil
 }
 
@@ -227,9 +255,12 @@ func doBreadcrumbs(tmpl *template.Template, files []openapi.ApiManifestFile,
 func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 	job string, suffix string, deleteDirCrumbs bool, verbose bool) error {
 
+	var timestampRe = regexp.MustCompile(`-\d{12,14}`)
+
 	warnings := 0
 	for fileIndex := range files {
 		file := files[fileIndex]
+		fullPathNoTimestamp := timestampRe.ReplaceAllString(*file.Path, "") + suffix
 		fullPath := *file.Path + suffix
 		// one customer has breadcrumbs with file.ext(1).html
 		extraBreadcrumbPath := *file.Path + "(1)" + suffix
@@ -258,6 +289,13 @@ func doDeleteBreadcrumbs(files []openapi.ApiManifestFile,
 		err = os.Remove(extraBreadcrumbPath)
 		if err != nil && !os.IsNotExist(err) {
 			log.Printf("Failed to delete directory %s\n%v", extraBreadcrumbPath, err)
+		}
+		// some legacy breadcrumbs have timestamps in the name, remove those too if they exist, but do not log if not
+		if fullPath != fullPathNoTimestamp {
+			err = os.Remove(fullPathNoTimestamp)
+			if err != nil && !os.IsNotExist(err) {
+				log.Printf("Failed to delete %s\n%v", fullPathNoTimestamp, err)
+			}
 		}
 		if verbose {
 			log.Printf("Delete crumbs: %s %s", fullPath, extraBreadcrumbPath)
